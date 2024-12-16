@@ -1,0 +1,48 @@
+[
+  {
+    "email": "vendor@gmail.com",
+    "password": "mars03051972",
+    "first_name": "Евгений",
+    "last_name": "Пидченко",
+    "is_active": true,
+    "is_superuser": false,
+    "status": "OWNER"
+  },
+  {
+    "email": "vendor1@gmail.com",
+    "password": "mars03051972",
+    "first_name": "vendor1",
+    "last_name": "vendor1",
+    "is_active": true,
+    "is_superuser": false,
+    "status": "OWNER"
+  },
+  {
+    "email": "admin@gmail.com",
+    "password": "mars03051972",
+    "first_name": "superuser",
+    "last_name": "superuser",
+    "is_active": true,
+    "is_superuser": true,
+    "status": "OWNER"
+  },
+  {
+    "email": "customer@gmail.com",
+    "password": "mars03051972",
+    "first_name": "customer",
+    "last_name": "customer",
+    "is_active": true,
+    "is_superuser": false,
+    "status": "PLAYER"
+  },
+  {
+
+    "email": "customer1@gmail.com",
+    "password": "mars03051972",
+    "first_name": "customer1",
+    "last_name": "customer1",
+    "is_active": false,
+    "is_superuser": false,
+    "status": "PLAYER"
+  }
+]

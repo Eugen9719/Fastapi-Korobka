@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Донбасс Арена",
+    "slug": "donbass",
+    "address": "ул. Кутузова",
+    "is_active": false,
+    "text": "string",
+    "description": "string",
+    "additional_info": "string",
+    "price": 200,
+    "country": "Россия",
+    "city": "Донецк",
+
+    "user_id": 1,
+    "status": "VERIFICATION"
+  },
+  {
+    "name": "Открытие  Арена",
+    "slug": "otkritie",
+    "address": "ул. Шевченко",
+    "is_active": true,
+    "text": "string",
+    "description": "string",
+    "additional_info": "string",
+    "price": 300,
+    "country": "Россия",
+    "city": "Москва",
+
+    "user_id": 1
+  }
+]
