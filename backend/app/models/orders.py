@@ -51,7 +51,7 @@ class UserRead(SQLModel):
 
 class BookingRead(SQLModel):
     id: int
-    user: Optional[int]
+    user_id: Optional[int]
     stadium_id: int
     price: int
 

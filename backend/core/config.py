@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: str = ""
     FIRST_SUPERUSER_PASSWORD: str = ""
 
+    STRIPE_PUBLISHABLE_KEY: str = "pk_test_51QX1mzGCiqNsEAmeKrRy569Fv59zJ6GYbHobGuQaSLncsIVm4B6Qjq0NVcx4jCIOrZzjfWMAIWDX0D1HnOnHl6UI00thgmXqiv"
+    STRIPE_SECRET_KEY:str =  "sk_test_51QX1mzGCiqNsEAmeIcANkoXbiP7LGndJvnNhzeVVdv0ltY42BmMgv4ud0UnlF7TZqCadrB5vva0zgGLlZGHkSAM700Gt7auVHJ"
+    STRIPE_WEBHOOK_SECRET:str = "whsec_be8a107eca99f4c29dfbd72141a38bcacf336239b72f0eb68f2d955058747cd0"
+
 
 settings = Settings()
 

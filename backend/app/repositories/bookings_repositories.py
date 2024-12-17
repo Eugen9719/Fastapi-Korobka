@@ -49,9 +49,8 @@ class BookingRepositories(BaseRepository[Booking, BookingCreate, BookingUpdate])
         return super().create(db=db, schema=schema, user_id=user.id, price=booking_price, )
 
     def update_booking(self, db: Session, booking_id: int, schema: BookingUpdate, user: User):
-        bookings = self.get(db, id=booking_id)
-        if not bookings:
-            raise HTTPException(status_code=404, detail="Booking not found.")
+        bookings = self.get_or_404(db, id=booking_id)
+
 
         if bookings.user_id != user.id:
             raise HTTPException(status_code=403, detail="Not authorized to update this booking.")
