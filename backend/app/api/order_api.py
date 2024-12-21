@@ -38,7 +38,11 @@ def cancel_order(order_id: int, db: SessionDep, user: CurrentUser):
 @order_router.put('/pay/{order_id}', response_model=OrderRead)
 def pay_order(order_id: int, db: SessionDep):
     # Оплата заказа
-    return order_repo.mark_as_paid(db=db, order_id=order_id)
+    return order_repo.mark_as_paid(db=db,  order_id=order_id)
+
+
+
+
 
 @order_router.post('/pay/{order_id}', response_model=dict)
 def create_payment_session(order_id: int, db: SessionDep, user: CurrentUser):

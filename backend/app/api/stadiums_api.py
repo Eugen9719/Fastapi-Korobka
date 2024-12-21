@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException
 
 from ..base.auth.permissions import OwnerUser, SuperUser, CurrentUser
 from ..base.utils.deps import SessionDep
-from ..models import Stadiums
+from ..models import Stadiums, AdditionalService
+from ..models.additional_service import StadiumServiceAdd
 from ..models.auth import Msg
 from ..models.stadiums import StadiumsCreate, StadiumsRead, StadiumVerificationUpdate, StadiumStatus, StadiumsUpdate
 from ..repositories.stadiums_repositories import stadium_repo
@@ -25,6 +26,35 @@ def create_stadium(schema: StadiumsCreate, db: SessionDep, user: OwnerUser):
         raise HTTPException(status_code=400, detail="Slug already used")
     return stadium_repo.create(db=db, schema=schema, user_id=user.id)
 
+
+@stadium_router.post('/add_services/{stadium_id}', response_model=StadiumsRead)
+def add_services_to_stadium(stadium_id: int, schema: StadiumServiceAdd, db: SessionDep):
+    # Получаем стадион по id
+    stadium = stadium_repo.get_or_404(db, id=stadium_id)
+
+    # Привязываем существующие сервисы
+    if schema.service_ids:
+        existing_services = db.query(AdditionalService).filter(AdditionalService.id.in_(schema.service_ids)).all()
+        if len(existing_services) != len(schema.service_ids):
+            raise HTTPException(status_code=404, detail="Some of the selected services do not exist")
+        for service in existing_services:
+            service.stadium_id = stadium.id
+        db.commit()
+
+    # Добавляем новые сервисы
+    if schema.new_services:
+        for new_service in schema.new_services:
+            service = AdditionalService(
+                name=new_service.name,
+                description=new_service.description,
+                price=new_service.price,
+                stadium_id=stadium.id
+            )
+            db.add(service)
+        db.commit()
+    db.commit()
+
+    return stadium
 
 @stadium_router.patch('/verification/{stadium_id}', response_model=StadiumsRead)
 def verification_stadium(stadium_id: int, schema: StadiumVerificationUpdate, db: SessionDep, user: SuperUser):

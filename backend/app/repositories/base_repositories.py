@@ -113,3 +113,7 @@ class BaseRepository(Generic[ModelType, CreateType, UpdateType]):
         if not current_user.is_superuser and model.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Только админ или создатель могут проводить операции")
 
+    def check_current_user(self,  current_user: User, model: ModelType) -> None:
+        if not current_user.is_superuser and model.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Вы не можете проводить эту операцию")
+

@@ -7,6 +7,8 @@ from sqlalchemy import Column, Numeric
 from sqlmodel import SQLModel, Field, Relationship
 
 
+
+
 class ImageBase(SQLModel):
     images: str
     stadiums_id: int
@@ -38,6 +40,7 @@ class StadiumsBase(SQLModel):
 
 
 class Stadiums(StadiumsBase, table=True):
+    __tablename__ = 'stadiums'
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     created_at: datetime = Field(default_factory=datetime.now, description="Дата создания")
     updated_at: datetime = Field(default_factory=datetime.now, description="Дата последнего обновления")
@@ -51,6 +54,7 @@ class Stadiums(StadiumsBase, table=True):
     owner: "User" = Relationship(back_populates="stadiums")
     stadium_reviews: List[Optional["StadiumReview"]] = Relationship(back_populates="stadium", sa_relationship_kwargs={
         "cascade": "all, delete-orphan"})
+    services: List["AdditionalService"] = Relationship(back_populates="stadium")
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -72,14 +76,6 @@ class StadiumReview(SQLModel, table=True):
     user_review: Optional["User"] = Relationship(back_populates="reviews")
 
 
-# class AdditionalService(SQLModel, table=True):
-#     id: Optional[int] = Field(default=None, primary_key=True)
-#     name: str = Field(max_length=255)
-#     description: Optional[str] = Field(default=None)
-#     price: float  # Цена за услугу
-#     stadium_id: int = Field(foreign_key="stadiums.id")
-#     stadium: Optional["Stadiums"] = Relationship(back_populates="services")
-#
 
 
 
@@ -124,6 +120,11 @@ class ReviewRead(SQLModel):
     review: str
     data: datetime
 
+class AdditionalServiceRead(SQLModel):
+    name: str = Field(max_length=255)
+    description: Optional[str] = Field(default=None)
+    price: float
+
 
 class StadiumsRead(StadiumsBase):
     id: int
@@ -134,5 +135,6 @@ class StadiumsRead(StadiumsBase):
     owner: Optional[UserRead]  # Включение данных о владельце
     images_all: List[Image]  # Включить список изображений
     stadium_reviews: List[StadiumReview] = []
+    services: List[AdditionalServiceRead] = []
 
     model_config = ConfigDict(from_attributes=True)
