@@ -7,7 +7,7 @@ from ..base.auth.permissions import CurrentUser
 from ..base.utils.deps import SessionDep
 from ..models.auth import Msg
 from ..models.bookings import BookingRead, BookingCreate, BookingUpdate
-from ..models.orders import OrderRead, OrderCreate, OrderUpdate
+from ..models.orders import OrderRead, OrderCreate
 from ..repositories.bookings_repositories import booking_repo
 from ..repositories.order_repositories import order_repo
 from ...core.config import settings

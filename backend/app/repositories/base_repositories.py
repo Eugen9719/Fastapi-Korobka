@@ -8,7 +8,6 @@ from sqlalchemy import Row, RowMapping
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import SQLModel, Session, select
 
-
 from backend.app.models import User
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
@@ -40,7 +39,6 @@ class BaseRepository(Generic[ModelType, CreateType, UpdateType]):
             raise HTTPException(status_code=404, detail="Объект не найден")
         return instance
 
-
     def exist(self, db: Session, **kwargs) -> bool:
         """
         Проверяет, существует ли запись, соответствующая заданным фильтрам.
@@ -57,14 +55,7 @@ class BaseRepository(Generic[ModelType, CreateType, UpdateType]):
     def get_by_filter(self, db: Session, *filters) -> Optional[ModelType]:
         return db.exec(select(self.model).filter(*filters)).first()
 
-    def get_all(self, db: Session, **kwargs) -> Sequence[Row[Any] | RowMapping | Any]:
-        """
-        Получает список объектов, отфильтрованный по заданным параметрам.
-        """
-        query = select(self.model)
-        if kwargs:
-            query = query.filter_by(**kwargs)
-        return db.execute(query).scalars().all()
+
 
     def get_many(self, db: Session, **kwargs) -> Sequence[ModelType]:
         """
@@ -72,11 +63,7 @@ class BaseRepository(Generic[ModelType, CreateType, UpdateType]):
         """
         return db.exec(select(self.model).filter_by(**kwargs)).all()
 
-    def all(self, db: Session, skip: int = 0, limit: int = 100) -> Sequence[ModelType]:
-        """
-        Получает все объекты с поддержкой пагинации.
-        """
-        return db.exec(select(self.model).offset(skip).limit(limit)).all()
+
 
     def create(self, db: Session, schema: CreateType, **kwargs) -> ModelType:
         """
@@ -109,11 +96,27 @@ class BaseRepository(Generic[ModelType, CreateType, UpdateType]):
                 raise Exception(f"Ошибка при удалении объекта: {e}")
         return obj
 
-    def check_current_user_or_admin(self,  current_user: User, model: ModelType) -> None:
+    @classmethod
+    def check_current_user_or_admin(cls, current_user: User, model: ModelType) -> None:
         if not current_user.is_superuser and model.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Только админ или создатель могут проводить операции")
 
-    def check_current_user(self,  current_user: User, model: ModelType) -> None:
+    @classmethod
+    def check_current_user(cls, current_user: User, model: ModelType) -> None:
         if not current_user.is_superuser and model.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Вы не можете проводить эту операцию")
 
+    # def get_all(self, db: Session, **kwargs) -> Sequence[Row[Any] | RowMapping | Any]:
+    #     """
+    #     Получает список объектов, отфильтрованный по заданным параметрам.
+    #     """
+    #     query = select(self.model)
+    #     if kwargs:
+    #         query = query.filter_by(**kwargs)
+    #     return db.execute(query).scalars().all()
+
+    # def all(self, db: Session, skip: int = 0, limit: int = 100) -> Sequence[ModelType]:
+    #     """
+    #     Получает все объекты с поддержкой пагинации.
+    #     """
+    #     return db.exec(select(self.model).offset(skip).limit(limit)).all()

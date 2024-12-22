@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship
 
+from backend.app.models.base_model_public import OrderReadBase, UserReadBase, BookingReadBase
 from backend.app.models.bookings import BookingServiceCreate
 
 
@@ -10,15 +11,6 @@ class StatusEnum(str, Enum):
     PENDING = "pending"
     COMPLETED = "completed"
     CANCELED="canceled"
-
-
-
-
-
-
-
-
-
 class OrderBase(SQLModel):
     status: str = Field(default=StatusEnum.PENDING, max_length=50)
 
@@ -43,41 +35,22 @@ class Order(OrderBase, table=True):
         return f"Заказ №{self.id} для пользователя {self.user_id}, статус: {self.status}"
 
 
-
+class OrderUpdate(OrderBase):
+    pass
 
 
 
 
 class OrderCreate(OrderBase):
-    booking_id: int  # Идентификатор бронирования
+    booking_id: int
     services: Optional[List[BookingServiceCreate]] = None
 
 
 
+class OrderRead(OrderReadBase):
+    user: Optional[UserReadBase]
+    booking: Optional[BookingReadBase]
 
-class OrderUpdate(OrderBase):
-    pass
-
-
-class UserRead(SQLModel):
-    id: int
-    email:str
-    first_name: str
-    last_name: str
-
-class BookingRead(SQLModel):
-    id: int
-    user_id: Optional[int]
-    stadium_id: int
-    price: int
-
-class OrderRead(OrderBase):
-    id: Optional[int]
-    created_at: datetime
-    total_price: int
-    user: Optional[UserRead]
-    user_id: int = Field(foreign_key="user.id")
-    booking:Optional[BookingRead]
 
 
 

@@ -6,7 +6,8 @@ from enum import Enum as PyEnum
 from sqlalchemy import Column, Numeric
 from sqlmodel import SQLModel, Field, Relationship
 
-
+from backend.app.models.base_model_public import ReviewReadBase, UserReadBase, StadiumsReadBase, \
+    AdditionalServiceReadBase
 
 
 class ImageBase(SQLModel):
@@ -113,28 +114,15 @@ class UpdateReview(SQLModel):
     review: str
 
 
-class ReviewRead(SQLModel):
-    id: Optional[int]
-    user_id: int
-    stadium_id: int
-    review: str
-    data: datetime
-
-class AdditionalServiceRead(SQLModel):
-    name: str = Field(max_length=255)
-    description: Optional[str] = Field(default=None)
-    price: float
+class ReviewRead(ReviewReadBase):
+    user: Optional[UserReadBase]
+    stadium: Optional[StadiumsReadBase]
 
 
-class StadiumsRead(StadiumsBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    is_active: bool
-    user_id: int
-    owner: Optional[UserRead]  # Включение данных о владельце
-    images_all: List[Image]  # Включить список изображений
-    stadium_reviews: List[StadiumReview] = []
-    services: List[AdditionalServiceRead] = []
+class StadiumsRead(StadiumsReadBase):
+    owner: Optional[UserReadBase]
+    images_all: List[Image]
+    stadium_reviews: List[ReviewReadBase] = []
+    services: List[AdditionalServiceReadBase] = []
 
     model_config = ConfigDict(from_attributes=True)

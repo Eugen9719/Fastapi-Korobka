@@ -5,12 +5,12 @@ from sqlmodel import Session, select
 
 from backend.app.models import Order, User, AdditionalService
 from backend.app.models.bookings import BookingService
-from backend.app.models.orders import OrderCreate, OrderUpdate, StatusEnum
+from backend.app.models.orders import OrderCreate, StatusEnum, OrderUpdate
 from backend.app.repositories.base_repositories import BaseRepository
 from backend.app.repositories.bookings_repositories import booking_repo
 
 
-class OrderRepository(BaseRepository[Order, OrderCreate, OrderUpdate]):
+class OrderRepository(BaseRepository[Order, OrderCreate, OrderUpdate ]):
     def create_order(self, db: Session, schema: OrderCreate, user: User):
         # Проверка на существующее бронирование
         booking = booking_repo.get_or_404(db=db, id=schema.booking_id)

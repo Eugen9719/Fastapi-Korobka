@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 
+from backend.app.models.base_model_public import BookingReadBase, UserReadBase, StadiumsReadBase
+
 
 class BookingBase(SQLModel):
 
@@ -56,11 +58,7 @@ class BookingUpdate(BookingBase):
     stadium_id: Optional[int]
 
 
-class BookingRead(BookingBase):
-    id: Optional[int]
-    price: int
-    stadium_id: Optional[int]
-    user_id: Optional[int]
+
 
 
 class BookingServiceCreate(SQLModel):
@@ -68,22 +66,26 @@ class BookingServiceCreate(SQLModel):
     quantity:int = Field(default=1)
 
 
-class BookingServiceAdd(SQLModel):
-    service_ids: List[BookingServiceCreate] = []
+class BookingRead(BookingReadBase):
+    user: Optional[UserReadBase]
+    stadium: Optional[StadiumsReadBase]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "service_ids": [
-                    {
-                        "service_id": 1,
-                        "quantity": 2
-
-                    },
-                    {
-                         "service_id": 2,
-                        "quantity": 1
-                    }
-                ]
-            }
-        }
+# class BookingServiceAdd(SQLModel):
+#     service_ids: List[BookingServiceCreate] = []
+#
+#     class Config:
+#         json_schema_extra = {
+#             "example": {
+#                 "service_ids": [
+#                     {
+#                         "service_id": 1,
+#                         "quantity": 2
+#
+#                     },
+#                     {
+#                          "service_id": 2,
+#                         "quantity": 1
+#                     }
+#                 ]
+#             }
+#         }

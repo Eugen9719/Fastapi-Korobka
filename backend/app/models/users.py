@@ -6,6 +6,7 @@ from typing import Optional, List
 from pydantic import  ConfigDict
 
 from backend.app.models import Order
+from backend.app.models.base_model_public import UserReadBase
 from backend.app.models.bookings import Booking
 
 from backend.app.models.stadiums import  Stadiums, StadiumReview
@@ -75,7 +76,7 @@ class UserUpdateAdmin(UserBase):
     status: StatusEnum = Field(default=StatusEnum.PLAYER)
 
 
-class UserPublic(UserBase):
-    status: StatusEnum = Field(default=StatusEnum.PLAYER)
+class UserPublic(UserReadBase):
+    status: StatusEnum
 
     model_config = ConfigDict(from_attributes=True)
