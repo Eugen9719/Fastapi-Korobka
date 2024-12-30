@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.app.base.utils.deps import get_db
-from backend.app.repositories.user_repositories import user_repository
+from backend.app.repositories.user_repositories import user_repo
 from backend.core import security
 from backend.core.config import settings
 
@@ -22,10 +22,10 @@ class AdminAuth(AuthenticationBackend):
         email, password = form["username"], form["password"]
 
         # Логика аутентификации
-        user = user_repository.authenticate(db=self.db, email=email, password=password)
+        user = user_repo.authenticate(db=self.db, email=email, password=password)
         if not user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect username or password")
-        elif not user_repository.is_active(user):
+        elif not user_repo.is_active(user):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
         # Создание токена доступа
@@ -50,5 +50,5 @@ class AdminAuth(AuthenticationBackend):
         return True
 
 # Передача экземпляра `db` при создании экземпляра `AdminAuth`
-db_instance = next(get_db())
-authentication_backend = AdminAuth(secret_key="your-secret-key", db=db_instance)
+# db_instance = next(get_db())
+# authentication_backend = AdminAuth(secret_key="your-secret-key", db=db_instance)

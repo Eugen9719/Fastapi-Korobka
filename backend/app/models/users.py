@@ -3,13 +3,13 @@ from enum import Enum as PyEnum
 
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
-from pydantic import  ConfigDict
+from pydantic import ConfigDict
 
 from backend.app.models import Order
 from backend.app.models.base_model_public import UserReadBase
 from backend.app.models.bookings import Booking
 
-from backend.app.models.stadiums import  Stadiums, StadiumReview
+from backend.app.models.stadiums import Stadiums, StadiumReview
 
 
 class StatusEnum(str, PyEnum):
@@ -40,10 +40,8 @@ class User(UserBase, table=True):
     stadiums: List["Stadiums"] = Relationship(back_populates="owner")
     orders: List["Order"] = Relationship(back_populates="user")
 
-
     def __str__(self):
         return f"{self.full_name()} ({self.email})"
-
 
 
 class UserCreate(UserBase):

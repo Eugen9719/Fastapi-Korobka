@@ -77,9 +77,6 @@ class StadiumReview(SQLModel, table=True):
     user_review: Optional["User"] = Relationship(back_populates="reviews")
 
 
-
-
-
 class ImageCreate(ImageBase):
     pass
 
@@ -102,6 +99,7 @@ class UserRead(SQLModel):
 
 
 class StadiumVerificationUpdate(SQLModel):
+    is_active: bool | None = None
     status: StadiumStatus
     reason: Optional[str] | None = None
 
@@ -115,14 +113,9 @@ class UpdateReview(SQLModel):
 
 
 class ReviewRead(ReviewReadBase):
-    user: Optional[UserReadBase]
-    stadium: Optional[StadiumsReadBase]
+    pass
 
 
 class StadiumsRead(StadiumsReadBase):
-    owner: Optional[UserReadBase]
-    images_all: List[Image]
-    stadium_reviews: List[ReviewReadBase] = []
-    services: List[AdditionalServiceReadBase] = []
+    pass
 
-    model_config = ConfigDict(from_attributes=True)

@@ -4,7 +4,7 @@ from sqladmin import Admin
 from starlette.middleware.cors import CORSMiddleware
 from backend.app import routers
 from backend.app.admin.admin import UserAdmin
-from backend.app.admin.api import authentication_backend
+
 
 
 
@@ -43,6 +43,6 @@ app.include_router(routers.api_router, prefix=settings.API_V1_STR)
 
 ######################################## Admin #########################################################################
 
-admin = Admin(app, engine, authentication_backend=authentication_backend)
-
-admin.add_view(UserAdmin)
+# admin = Admin(app, engine, authentication_backend=authentication_backend)
+#
+# admin.add_view(UserAdmin)

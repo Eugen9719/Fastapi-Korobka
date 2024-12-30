@@ -10,7 +10,9 @@ from backend.app.models.bookings import BookingServiceCreate
 class StatusEnum(str, Enum):
     PENDING = "pending"
     COMPLETED = "completed"
-    CANCELED="canceled"
+    CANCELED = "canceled"
+
+
 class OrderBase(SQLModel):
     status: str = Field(default=StatusEnum.PENDING, max_length=50)
 
@@ -26,7 +28,6 @@ class Order(OrderBase, table=True):
     booking: "Booking" = Relationship()
     user: "User" = Relationship(back_populates="orders")
 
-
     @property
     def formatted_created_at(self):
         return self.created_at.strftime("%d/%m/%Y %H:%M:%S")
@@ -39,20 +40,11 @@ class OrderUpdate(OrderBase):
     pass
 
 
-
-
 class OrderCreate(OrderBase):
     booking_id: int
     services: Optional[List[BookingServiceCreate]] = None
 
 
-
 class OrderRead(OrderReadBase):
     user: Optional[UserReadBase]
     booking: Optional[BookingReadBase]
-
-
-
-
-
-

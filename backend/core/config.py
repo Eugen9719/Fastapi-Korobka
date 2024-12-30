@@ -1,6 +1,6 @@
-import logging
 from typing import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     )
 
     API_V1_STR: str = "/api/v1"  # Базовая строка API
-    SECRET_KEY: str = "" # Генерация случайного секретного ключа
-    ALGORITHM:str = "HS256"
+    SECRET_KEY: str = ""  # Генерация случайного секретного ключа
+    ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # Время жизни токена доступа (8 дней)
     DOMAIN: str = "localhost"  # Домен приложения
     ENVIRONMENT: Literal["local", "test", "production"] = 'local'
@@ -33,11 +33,11 @@ class Settings(BaseSettings):
     def database_url(self):
         if self.ENVIRONMENT == "test":
             return (
-                f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
                 f"@localhost:{self.POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
             )
         return (
-            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@localhost:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
@@ -59,11 +59,8 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str = ""
 
     STRIPE_PUBLISHABLE_KEY: str = "pk_test_51QX1mzGCiqNsEAmeKrRy569Fv59zJ6GYbHobGuQaSLncsIVm4B6Qjq0NVcx4jCIOrZzjfWMAIWDX0D1HnOnHl6UI00thgmXqiv"
-    STRIPE_SECRET_KEY:str =  "sk_test_51QX1mzGCiqNsEAmeIcANkoXbiP7LGndJvnNhzeVVdv0ltY42BmMgv4ud0UnlF7TZqCadrB5vva0zgGLlZGHkSAM700Gt7auVHJ"
-    STRIPE_WEBHOOK_SECRET:str = "whsec_be8a107eca99f4c29dfbd72141a38bcacf336239b72f0eb68f2d955058747cd0"
+    STRIPE_SECRET_KEY: str = "sk_test_51QX1mzGCiqNsEAmeIcANkoXbiP7LGndJvnNhzeVVdv0ltY42BmMgv4ud0UnlF7TZqCadrB5vva0zgGLlZGHkSAM700Gt7auVHJ"
+    STRIPE_WEBHOOK_SECRET: str = "whsec_be8a107eca99f4c29dfbd72141a38bcacf336239b72f0eb68f2d955058747cd0"
 
 
 settings = Settings()
-
-
-

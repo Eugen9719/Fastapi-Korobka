@@ -1,4 +1,3 @@
-
 import stripe
 from fastapi import APIRouter, Request, HTTPException
 
@@ -8,6 +7,7 @@ from backend.app.repositories.order_repositories import order_repo
 from backend.core.config import settings
 
 webhook_router = APIRouter()
+
 
 @webhook_router.post('/webhook/stripe')
 async def stripe_webhook(request: Request, db: SessionDep):

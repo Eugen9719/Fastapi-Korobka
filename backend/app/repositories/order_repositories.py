@@ -1,33 +1,39 @@
 import stripe
 from fastapi import HTTPException
-
-from sqlmodel import Session, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from backend.app.models import Order, User, AdditionalService
 from backend.app.models.bookings import BookingService
 from backend.app.models.orders import OrderCreate, StatusEnum, OrderUpdate
-from backend.app.repositories.base_repositories import BaseRepository
+from backend.app.repositories.base_repositories import AsyncBaseRepository
 from backend.app.repositories.bookings_repositories import booking_repo
 
 
-class OrderRepository(BaseRepository[Order, OrderCreate, OrderUpdate ]):
-    def create_order(self, db: Session, schema: OrderCreate, user: User):
+class OrderRepository(AsyncBaseRepository[Order, OrderCreate, OrderUpdate]):
+    async def create_order(self, db: AsyncSession, schema: OrderCreate, user: User):
         # Проверка на существующее бронирование
-        booking = booking_repo.get_or_404(db=db, id=schema.booking_id)
-        if self.get_by_filter(db, self.model.booking_id == booking.id):
+        booking = await booking_repo.get_or_404(db=db, id=schema.booking_id)
+        existing_order = await self.get_by_filter(db, self.model.booking_id == booking.id)
+        if existing_order:
             raise HTTPException(status_code=400, detail="Бронирование уже используется")
         self.check_current_user(current_user=user, model=booking)
 
         all_service_price = 0
-        # # Если переданы услуги, добавляем их к букингу
+        # Если переданы услуги, добавляем их к букингу
         if schema.services:
             for service_data in schema.services:
-                service = db.query(AdditionalService).filter_by(id=service_data.service_id).first()
+                # Асинхронный поиск услуги
+                result = await db.execute(
+                    select(AdditionalService).where(AdditionalService.id == service_data.service_id)
+                )
+                service = result.scalar_one_or_none()
                 if not service:
                     raise HTTPException(status_code=404, detail=f"Service with ID {service_data.service_id} not found")
 
                 all_service_price += (service.price * service_data.quantity)
 
+                # Создание связи с услугой
                 booking_service = BookingService(
                     booking_id=booking.id,
                     service_id=service_data.service_id,
@@ -35,39 +41,46 @@ class OrderRepository(BaseRepository[Order, OrderCreate, OrderUpdate ]):
                     total_price=service.price * service_data.quantity
                 )
                 db.add(booking_service)
+
         # Рассчитываем общую стоимость
         total_price = booking.price + all_service_price
 
-        return super().create(db=db, schema=schema, user_id=user.id, total_price=total_price)
+        # Создание заказа через родительский метод
+        return await super().create(db=db, schema=schema, user_id=user.id, total_price=total_price)
 
-    def cancel_order(self, db: Session, order_id: int, user: User):
+    async def cancel_order(self, db: AsyncSession, order_id: int, user: User):
         # Получаем заказ
-        order = self.get_or_404(db=db, id=order_id)
+        order = await self.get_or_404(db=db, id=order_id)
+
         # Проверяем, что только владелец может отменить заказ
         if order.user_id != user.id:
             raise HTTPException(status_code=403, detail="You are not allowed to cancel this order.")
+
         # Проверяем, что статус позволяет отмену
         if order.status != StatusEnum.PENDING:
             raise HTTPException(status_code=400, detail="Only pending orders can be canceled.")
-        # Меняем статус и сохраняем
+
+        # Меняем статус на 'CANCELED'
         order.status = StatusEnum.CANCELED
-        self.save_db(db, order)
+
+        # Сохраняем изменения с помощью save_db
+        await self.save_db(db, order)
         return order
 
-    def mark_as_paid(self, db: Session, order_id: int):
+    async def mark_as_paid(self, db: AsyncSession, order_id: int):
         # Получаем заказ
-        order = self.get_or_404(db=db, id=order_id)
+        order = await self.get_or_404(db=db, id=order_id)
         # Проверяем статус заказа
         if order.status != StatusEnum.PENDING:
             raise HTTPException(status_code=400, detail="Only pending orders can be paid.")
         # Меняем статус заказа
         order.status = StatusEnum.COMPLETED
-        self.save_db(db, order)
+        await self.save_db(db, order)
         return order
 
-    def create_payment_session(self, db: Session, order_id: int, success_url: str, cancel_url: str):
+    async def create_payment_session(self, db: AsyncSession, order_id: int, success_url: str, cancel_url: str):
         # Получение заказа
-        order = self.get_or_404(db=db, id=order_id)
+        order = await self.get_or_404(db=db, id=order_id)
         if order.status != StatusEnum.PENDING:
             raise HTTPException(status_code=400, detail="Order must be pending to create a payment session.")
 
@@ -88,7 +101,6 @@ class OrderRepository(BaseRepository[Order, OrderCreate, OrderUpdate ]):
                 },
                 "quantity": 1,
             },
-
 
         ]
         if order.booking.booking_services:
@@ -118,7 +130,6 @@ class OrderRepository(BaseRepository[Order, OrderCreate, OrderUpdate ]):
         )
 
         return session.url
-
 
 
 order_repo = OrderRepository(Order)

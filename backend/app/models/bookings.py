@@ -6,10 +6,8 @@ from backend.app.models.base_model_public import BookingReadBase, UserReadBase, 
 
 
 class BookingBase(SQLModel):
-
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
-
+    start_time: Optional[datetime] = Field(default_factory=datetime.now)
+    end_time: Optional[datetime] = Field(default_factory=datetime.now)
 
     @property
     def formatted_start_time(self):
@@ -18,8 +16,6 @@ class BookingBase(SQLModel):
     @property
     def formatted_end_time(self):
         return self.end_time.strftime("%d/%m/%Y %H:%M:%S")
-
-
 
 
 class Booking(BookingBase, table=True):
@@ -35,7 +31,6 @@ class Booking(BookingBase, table=True):
         return f"Бронь № {self.id}"
 
 
-
 class BookingService(SQLModel, table=True):
     __tablename__ = 'booking_service'
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -48,44 +43,18 @@ class BookingService(SQLModel, table=True):
     service: Optional["AdditionalService"] = Relationship(back_populates="booking")
 
 
-
 class BookingCreate(BookingBase):
     stadium_id: Optional[int]
-
 
 
 class BookingUpdate(BookingBase):
     stadium_id: Optional[int]
 
 
-
-
-
 class BookingServiceCreate(SQLModel):
     service_id: int
-    quantity:int = Field(default=1)
+    quantity: int = Field(default=1)
 
 
 class BookingRead(BookingReadBase):
-    user: Optional[UserReadBase]
-    stadium: Optional[StadiumsReadBase]
-
-# class BookingServiceAdd(SQLModel):
-#     service_ids: List[BookingServiceCreate] = []
-#
-#     class Config:
-#         json_schema_extra = {
-#             "example": {
-#                 "service_ids": [
-#                     {
-#                         "service_id": 1,
-#                         "quantity": 2
-#
-#                     },
-#                     {
-#                          "service_id": 2,
-#                         "quantity": 1
-#                     }
-#                 ]
-#             }
-#         }
+    pass

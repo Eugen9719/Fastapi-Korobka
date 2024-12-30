@@ -14,6 +14,7 @@ class AdditionalService(SQLModel, table=True):
     stadium: Optional["Stadiums"] = Relationship(back_populates="services")
     booking: List["BookingService"] = Relationship(back_populates="service")
 
+
 class AdditionalServiceCreate(SQLModel):
     name: str = Field(max_length=255)
     description: Optional[str] = Field(default=None)

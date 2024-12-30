@@ -1,9 +1,9 @@
 from backend.app.models.auth import Verification, VerificationCreate, VerificationOut
-from backend.app.repositories.base_repositories import BaseRepository
+from backend.app.repositories.base_repositories import AsyncBaseRepository
 
 
-class VerifyRepository(BaseRepository[Verification, VerificationCreate, VerificationOut]):
+class VerifyRepository(AsyncBaseRepository[Verification, VerificationCreate, VerificationOut]):
     pass
 
 
-auth_repository = VerifyRepository(Verification)
+auth_repo = VerifyRepository(Verification)

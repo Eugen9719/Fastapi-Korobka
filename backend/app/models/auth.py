@@ -15,8 +15,6 @@ class Token(SQLModel):
     token_type: str = "bearer"
 
 
-
-
 class Msg(SQLModel):
     msg: str
 
@@ -32,7 +30,6 @@ class VerificationCreate(SQLModel):
 
 class TokenPayload(SQLModel):
     sub: int | None = None
-
 
 
 class NewPassword(SQLModel):
