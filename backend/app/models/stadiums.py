@@ -65,6 +65,9 @@ class Stadiums(StadiumsBase, table=True):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self) -> str:
+        return f"/api/v1/detail/{self.slug}"
+
 
 class StadiumReview(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -117,5 +120,12 @@ class ReviewRead(ReviewReadBase):
 
 
 class StadiumsRead(StadiumsReadBase):
-    pass
+    name:str
+    slug:str
+    address: str
+    description: Optional[str]
+    additional_info: Optional[str]
+    price: Decimal
+    country: str
+    city: str
 

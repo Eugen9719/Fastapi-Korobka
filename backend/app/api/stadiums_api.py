@@ -3,13 +3,14 @@ from typing import Any, List
 
 from fastapi import APIRouter
 
-from ..base.auth.permissions import OwnerUser, SuperUser, CurrentUser
-from ..base.utils.deps import SessionDep
+from backend.app.services.auth.permissions import OwnerUser, SuperUser, CurrentUser
+
 from ..models import Stadiums
 from ..models.additional_service import StadiumServiceAdd
 from ..models.auth import Msg
 from ..models.stadiums import StadiumsCreate, StadiumsRead, StadiumVerificationUpdate, StadiumsUpdate
 from ..repositories.stadiums_repositories import stadium_repo
+from ...core.db import SessionDep
 
 stadium_router = APIRouter()
 
@@ -44,6 +45,7 @@ async def get_stadiums(db: SessionDep):
     return await stadium_repo.get_many(db=db)
 
 
+
 @stadium_router.delete("/delete/{stadium_id}")
 async def delete_stadiums(db: SessionDep, current_user: CurrentUser, stadium_id: int) -> Msg:
     return await stadium_repo.delete_stadium(db, stadium_id=stadium_id, user=current_user)
@@ -52,6 +54,10 @@ async def delete_stadiums(db: SessionDep, current_user: CurrentUser, stadium_id:
 @stadium_router.get("/detail/{stadium_id}", response_model=StadiumsRead)
 async def detail_stadium(db: SessionDep, stadium_id: int) -> Any:
     return await stadium_repo.get_or_404(db=db, id=stadium_id)
+
+@stadium_router.get('/detail_slug/{stadium_slug}', response_model=StadiumsRead)
+async def get_stadium(db: SessionDep, stadium_slug:str):
+    return await stadium_repo.get(db=db, slug=stadium_slug)
 
 # @stadium_router.post("/add_stadium-image", response_model=StadiumsRead)
 # def add_stadium_image(

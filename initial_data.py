@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,38 +34,40 @@ async def prepare_local_data(db: AsyncSession):
             await db.commit()  # Асинхронный commit
             logger.info(f"Загружено {len(users)} пользователей.")
 
-        # # Загрузка стадионов
-        # stadiums = open_json("stadiums")
-        # if not stadiums:
-        #     logger.error("Данные полей отсутствуют или не загружены.")
-        # else:
-        #     for stadiums_data in stadiums:
-        #         stadium = Stadiums(**stadiums_data)
-        #         db.add(stadium)
-        #     await db.commit()  # Асинхронный commit
-        #     logger.info(f"Загружено {len(stadiums)} полей.")
-        #
-        # # Загрузка отзывов
-        # reviews = open_json("reviews")
-        # if not reviews:
-        #     logger.error("Данные полей отсутствуют или не загружены.")
-        # else:
-        #     for review_data in reviews:
-        #         review = StadiumReview(**review_data)
-        #         db.add(review)
-        #     await db.commit()  # Асинхронный commit
-        #     logger.info(f"Загружено {len(reviews)} полей.")
-        #
-        # # Загрузка бронирований
-        # bookings = open_json("bookings")
-        # if not bookings:
-        #     logger.error("Данные полей отсутствуют или не загружены.")
-        # else:
-        #     for booking_data in bookings:
-        #         booking = Booking(**booking_data)
-        #         db.add(booking)
-        #     await db.commit()  # Асинхронный commit
-        #     logger.info(f"Загружено {len(bookings)} полей.")
+        # Загрузка стадионов
+        stadiums = open_json("stadiums")
+        if not stadiums:
+            logger.error("Данные полей отсутствуют или не загружены.")
+        else:
+            for stadiums_data in stadiums:
+                stadium = Stadiums(**stadiums_data)
+                db.add(stadium)
+            await db.commit()  # Асинхронный commit
+            logger.info(f"Загружено {len(stadiums)} полей.")
+
+        # Загрузка отзывов
+        reviews = open_json("reviews")
+        if not reviews:
+            logger.error("Данные полей отсутствуют или не загружены.")
+        else:
+            for review_data in reviews:
+                review = StadiumReview(**review_data)
+                db.add(review)
+            await db.commit()  # Асинхронный commit
+            logger.info(f"Загружено {len(reviews)} полей.")
+
+        # Загрузка бронирований
+        bookings = open_json("bookings")
+        if not bookings:
+            logger.error("Данные полей отсутствуют или не загружены.")
+        else:
+            for booking_data in bookings:
+                booking_data["start_time"] = datetime.fromisoformat(booking_data["start_time"])
+                booking_data["end_time"] = datetime.fromisoformat(booking_data["end_time"])
+                booking = Booking(**booking_data)
+                db.add(booking)
+            await db.commit()  # Асинхронный commit
+            logger.info(f"Загружено {len(bookings)} полей.")
 
     except Exception as e:
         logger.error(f"Ошибка при загрузке данных: {e}")

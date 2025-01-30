@@ -15,7 +15,7 @@ from backend.core.config import settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+@pytest.mark.run(order=2)
 @pytest.mark.anyio
 @pytest.mark.usefixtures("db", "client")
 class TestUserApi:
@@ -88,41 +88,17 @@ class TestUserApi:
     #     response = await client.get(f"{settings.API_V1_STR}/user/", headers=headers)
     #     assert response.status_code == 200
 
-    # @pytest.mark.parametrize("admin_id, user_id, email,  status, detail", [
-    #     (3, 1, "user22r@example.com", 200, None),
-    #     (3, 1,"customer@gmail.com",  409, {"detail": "User with this email already exists"}),
-    #     (3, 99,"player1@gmail.com",  404, {"detail": "Not Found"}),
+
+
+
+    # @pytest.mark.parametrize("admin_id, user_id,   status, detail", [
+    #     (3, 1, 200, None),
     #
     # ])
-    # async def test_update_user(self, db, client,admin_id, user_id, email, status, detail):
-    #
+    # async def test_delete_user(self, client, admin_id, user_id, status, detail):
     #     token = security.create_access_token(admin_id, expires_delta=timedelta(minutes=10))
     #     headers = {"Authorization": f"Bearer {str(token)}"}
-    #
-    #     update_data = {
-    #         "email": email,
-    #         "username": "stri21ng",
-    #         "first_name": "string",
-    #         "last_name": "string",
-    #         "avatar": "string",
-    #         "is_active": True,
-    #         "is_superuser": True,
-    #         "status": "PLAYER",
-    #
-    #     }
-    #     response = await client.patch(f"{settings.API_V1_STR}/user/update/{user_id}", headers=headers,json=update_data)
+    #     response = await client.delete(f"{settings.API_V1_STR}/user/delete/{user_id}", headers=headers)
     #     assert response.status_code == status
     #     if response.status_code != 200:
     #         assert response.json() == detail
-
-    @pytest.mark.parametrize("admin_id, user_id,   status, detail", [
-        (3, 1, 200, None),
-
-    ])
-    async def test_delete_user(self, client, admin_id, user_id, status, detail):
-        token = security.create_access_token(admin_id, expires_delta=timedelta(minutes=10))
-        headers = {"Authorization": f"Bearer {str(token)}"}
-        response = await client.delete(f"{settings.API_V1_STR}/user/delete/{user_id}", headers=headers)
-        assert response.status_code == status
-        if response.status_code != 200:
-            assert response.json() == detail

@@ -1,0 +1,44 @@
+{%extends "base.html"%}
+{%block content %}
+<div>
+    {%for stadium in stadiums%}
+    <div class="center-card">
+        <div class="stadium-image"></div>
+
+        <div class="card-content">
+            <a href="{{stadium.get_absolute_url() }}"><h2>{{stadium.name}}</h2></a>
+            <div class="price-tag">{{stadium.price}} грн/час</div>
+
+            <div class="address-block">
+                <strong>Адреса:</strong>
+                <ul>
+                    <li>ул. Академика Шалимова, Л-А</li>
+                </ul>
+            </div>
+
+            <p>Профессиональное поле с искусственным покрытием FIFA Quality. Освещение, раздевалки, трибуны на 50 мест.</p>
+
+            <div class="services-list">
+                <div class="service-item">
+                    <img src="ball-icon.png" alt="Инвентарь" class="service-icon">
+                    <span>Футбольные мячи</span>
+                </div>
+                <div class="service-item">
+                    <img src="shower-icon.png" alt="Душ" class="service-icon">
+                    <span>Горячий душ</span>
+                </div>
+                <div class="service-item">
+                    <img src="parking-icon.png" alt="Парковка" class="service-icon">
+                    <span>Бесплатная парковка</span>
+                </div>
+                <div class="service-item">
+                    <img src="security-icon.png" alt="Охрана" class="service-icon">
+                    <span>Круглосуточная охрана</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {%endfor %}
+
+</div>
+{%endblock%}

@@ -1,10 +1,11 @@
 from fastapi import APIRouter
-from backend.app.base.auth.permissions import CurrentUser
-from backend.app.base.utils.deps import SessionDep
+from backend.app.services.auth.permissions import CurrentUser
+
 
 from backend.app.models.auth import Msg
 from backend.app.models.stadiums import CreateReview, ReviewRead, UpdateReview
-from backend.app.repositories.stadiums_repositories import stadium_repo, review_repo
+from backend.app.repositories.stadiums_repositories import review_repo
+from backend.core.db import SessionDep
 
 add_review_router = APIRouter()
 

@@ -1,11 +1,18 @@
+import logging
 from datetime import timedelta
 
 import pytest
 
+from backend.app.repositories.stadiums_repositories import review_repo
 from backend.core import security
 from backend.core.config import settings
 
+# Настраиваем логгирование для тестов
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+
+@pytest.mark.run(order=2)
 @pytest.mark.anyio
 class TestReviewAPI:
     @pytest.mark.parametrize("user_id, stadium_id, status, detail, data", [
@@ -34,9 +41,12 @@ class TestReviewAPI:
             assert response.json() == detail
 
     @pytest.mark.parametrize("user_id, review_id, status, detail, ", [
-        (2, 3, 200, None),
+        (2, 4, 200, None),
     ])
     async def test_delete_review(self, db, client, user_id, review_id, status, detail):
+        review = await review_repo.get_many(db=db)
+        for stadium in review:
+            logger.info(f"review: {stadium.id}")
         token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
         headers = {"Authorization": f"Bearer {str(token)}"}
 

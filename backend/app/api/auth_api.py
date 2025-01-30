@@ -4,16 +4,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.base.auth.auth_service import registration_user, verify_registration_user, password_recovery, \
+from backend.app.services.auth.auth_service import registration_user, verify_registration_user, password_recovery, \
     password_reset
 
-from backend.app.base.utils.deps import SessionDep
+
 
 from backend.app.models.auth import Token, Msg, VerificationOut
 from backend.app.models.users import UserCreate
 from backend.app.repositories.user_repositories import user_repo
 from backend.core import security
 from backend.core.config import settings
+from backend.core.db import SessionDep
 
 auth_router = APIRouter()
 

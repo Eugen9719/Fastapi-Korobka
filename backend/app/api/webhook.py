@@ -1,10 +1,11 @@
 import stripe
 from fastapi import APIRouter, Request, HTTPException
 
-from backend.app.base.utils.deps import SessionDep
+
 from backend.app.models.orders import StatusEnum
 from backend.app.repositories.order_repositories import order_repo
 from backend.core.config import settings
+from backend.core.db import SessionDep
 
 webhook_router = APIRouter()
 

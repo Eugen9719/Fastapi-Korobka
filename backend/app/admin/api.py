@@ -5,8 +5,6 @@ from starlette.requests import Request
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-
-from backend.app.base.utils.deps import get_db
 from backend.app.repositories.user_repositories import user_repo
 from backend.core import security
 from backend.core.config import settings

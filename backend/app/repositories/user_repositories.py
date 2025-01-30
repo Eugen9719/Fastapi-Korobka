@@ -11,11 +11,6 @@ from backend.core.security import verify_password, get_password_hash
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class UserRepositoryAdmin(AsyncBaseRepository[User, UserCreateAdmin, UserUpdateAdmin]):
-    def create_user(self, db: AsyncSession, schema: UserCreateAdmin, **kwargs):
-        hashed_password = get_password_hash(schema.password)
-        return super().create(db, schema, hashed_password=hashed_password, **kwargs)
-
 
 class UserRepository(AsyncBaseRepository[User, UserCreate, UserUpdate]):
     async def authenticate(self, db: AsyncSession, email: str, password: str) -> User | None:
@@ -82,6 +77,7 @@ class UserRepository(AsyncBaseRepository[User, UserCreate, UserUpdate]):
     def is_superuser(model: User) -> bool:
         return model.is_superuser
 
+
     @staticmethod
     def is_owner(model: User) -> bool:
         if model.status == StatusEnum.OWNER:
@@ -90,4 +86,4 @@ class UserRepository(AsyncBaseRepository[User, UserCreate, UserUpdate]):
 
 
 user_repo = UserRepository(User)
-admin_user_repo = UserRepositoryAdmin(User)
+

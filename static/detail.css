@@ -1,0 +1,234 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.info-block {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.info-block .image-section {
+    flex: 1;
+}
+
+.info-block .image-section img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.info-block .text-section {
+    flex: 1;
+    padding: 10px;
+}
+
+.info-block h1 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.info-block p {
+    line-height: 1.6;
+}
+
+.info-block .price {
+    font-size: 24px;
+    color: #27ae60;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.info-block ul {
+    list-style: none;
+    padding: 0;
+}
+
+.info-block ul li {
+    margin: 10px 0;
+}
+
+.info-block ul li strong {
+    color: #34495e;
+}
+
+.booking-block {
+    background-color: #34495e;
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.booking-block h2 {
+    margin-top: 0;
+}
+
+.booking-block form {
+    display: flex;
+    flex-direction: column;
+}
+
+.booking-block label {
+    margin: 10px 0 5px;
+}
+
+.booking-block input, .booking-block select {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.booking-block button {
+    padding: 10px;
+    background-color: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.booking-block button:hover {
+    background-color: #2ecc71;
+}
+
+.booking-container {
+    display: flex;
+    gap: 20px; /* Добавить пространство между колонками */
+}
+
+.left-column {
+    flex: 1.5; /* Это будет занимать  ширины */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.right-column {
+    flex: 1.5; /* Это будет занимать 1/3 ширины */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.date-slider {
+    display: compact;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+
+}
+
+.date-slider button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+
+.time-matrix {
+    display: flex;
+    gap: 20px;
+}
+
+.time-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.time-slot {
+    padding: 10px;
+    text-align: center;
+    font-size: 11px;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    transition: background-color 0.3s ease;
+}
+
+.time-slot:hover {
+    background-color: #ddd;
+}
+
+/* 🟥 Забронированные слоты */
+.time-slot.booked {
+    background-color: #ff4d4d;
+    color: white;
+    cursor: not-allowed;
+}
+.time-slot.my-booking {
+    background-color: green; /* Свои брони */
+    color: white;
+}
+
+/* ✅ Выбранные пользователем */
+.time-slot.selected {
+    background-color: #89de59;
+    color: white;
+}
+
+/* 🆗 Доступные */
+.time-slot.available {
+    background-color: #e0e0e0;
+}
+
+/* Блок бронирования */
+.booking-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 250px;
+    text-align: center;
+}
+
+.booking-info p {
+    font-size: 14px;
+    color: #666;
+}
+
+.book-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: gray;
+    border: none;
+    border-radius: 5px;
+    cursor: not-allowed;
+    transition: background-color 0.3s ease;
+}
+
+.book-btn.active {
+    background-color: #4caf50;
+    cursor: pointer;
+}
+
+.book-btn.active:hover {
+    background-color: #388e3c;
+}
+
+
+

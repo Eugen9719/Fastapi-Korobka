@@ -44,5 +44,15 @@
     "is_active": false,
     "is_superuser": false,
     "status": "PLAYER"
+  },
+    {
+
+    "email": "customer6@gmail.com",
+    "password": "mars03051972",
+    "first_name": "customer1",
+    "last_name": "customer1",
+    "is_active": false,
+    "is_superuser": false,
+    "status": "PLAYER"
   }
 ]

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{%block content %}
+
+<body>
+<div class="chat-container">
+    <div class="user-list" id="userList">
+        <!-- Пользователи будут загружены динамически -->
+
+
+    </div>
+    <div class="chat-area">
+        <div class="chat-header" id="chatHeader">
+            <span>Мини-чат</span>
+        </div>
+        <div class="messages" id="messages">
+            <div class="welcome-message">Выберите чат для общения</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+            <button id="sendButton" disabled>Отправить</button>
+        </div>
+    </div>
+</div>
+
+</body>
+
+{% endblock %}

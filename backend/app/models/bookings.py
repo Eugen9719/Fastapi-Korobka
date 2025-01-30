@@ -1,21 +1,18 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional, List
+
+from pydantic.v1 import validator
 from sqlmodel import SQLModel, Field, Relationship
 
 from backend.app.models.base_model_public import BookingReadBase, UserReadBase, StadiumsReadBase
 
 
 class BookingBase(SQLModel):
-    start_time: Optional[datetime] = Field(default_factory=datetime.now)
-    end_time: Optional[datetime] = Field(default_factory=datetime.now)
+    start_time: datetime = Field(nullable=False)
+    end_time: datetime = Field(nullable=False)
 
-    @property
-    def formatted_start_time(self):
-        return self.start_time.strftime("%d/%m/%Y %H:%M:%S")
 
-    @property
-    def formatted_end_time(self):
-        return self.end_time.strftime("%d/%m/%Y %H:%M:%S")
 
 
 class Booking(BookingBase, table=True):
@@ -43,8 +40,22 @@ class BookingService(SQLModel, table=True):
     service: Optional["AdditionalService"] = Relationship(back_populates="booking")
 
 
-class BookingCreate(BookingBase):
-    stadium_id: Optional[int]
+
+
+
+class BookingCreate(SQLModel):
+    start_time: datetime
+    end_time: datetime
+    stadium_id: int
+
+    @validator('start_time', 'end_time', pre=True)
+    def parse_datetime(self, value):
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value)
+            except ValueError:
+                raise ValueError(f"Некорректный формат даты и времени: {value}")
+        return value
 
 
 class BookingUpdate(BookingBase):
@@ -55,6 +66,21 @@ class BookingServiceCreate(SQLModel):
     service_id: int
     quantity: int = Field(default=1)
 
+class StadiumRead(SQLModel):
+    id: int
+    name: str
+    address: str
+    description: Optional[str]
+    additional_info: Optional[str]
+    price: Decimal
+    country: str
+    city: str
 
 class BookingRead(BookingReadBase):
-    pass
+    start_time: datetime
+    end_time: datetime
+
+class BookingReadGet(BookingReadBase):
+    stadium: StadiumRead
+    start_time: datetime
+    end_time: datetime

@@ -63,6 +63,9 @@ async def test_engine():
 
 @pytest.fixture(scope="session")
 async def create_tables(test_engine):
+    logger.info("Удаление всех таблиц из тестовой базы данных.")
+    async with test_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
     """Создание и удаление таблиц."""
     logger.info("Создание таблиц в тестовой базе данных.")
     async with test_engine.begin() as conn:
@@ -155,38 +158,4 @@ async def create_superuser(create_user, db: AsyncSession):
     await db.refresh(user)
     return user, _
 
-# Загрузка стадионов
-# stadiums = open_json("stadiums")
-# if not stadiums:
-#     logger.error("Данные полей отсутствуют или не загружены.")
-# else:
-#     for stadium_data in stadiums:
-#         stadium = Stadiums(**stadium_data)
-#         db.add(stadium)
-#
-#     await db.commit()  # Подтверждение добавления стадионов
-#     logger.info(f"Загружено {len(stadiums)} полей.")
-#
-# # Загрузка отзывов
-# reviews = open_json("reviews")
-# if not reviews:
-#     logger.error("Данные отзывов отсутствуют или не загружены.")
-# else:
-#     for review_data in reviews:
-#         review = StadiumReview(**review_data)
-#         db.add(review)
-#
-#     await db.commit()  # Подтверждение добавления отзывов
-#     logger.info(f"Загружено {len(reviews)} отзывов.")
-#
-# # Загрузка бронирований
-# bookings = open_json("bookings")
-# if not bookings:
-#     logger.error("Данные бронирований отсутствуют или не загружены.")
-# else:
-#     for booking_data in bookings:
-#         booking = Booking(**booking_data)
-#         db.add(booking)
-#
-#     await db.commit()  # Подтверждение добавления бронирований
-#     logger.info(f"Загружено {len(bookings)} бронирований.")
+

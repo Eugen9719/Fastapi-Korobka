@@ -7,14 +7,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from backend.core.security import get_password_hash
-from .send_email import send_new_account_email, send_reset_password_email
+from backend.app.services.auth.send_email import send_new_account_email, send_reset_password_email
+
+from backend.app.models.auth import VerificationCreate, VerificationOut
+from backend.app.models.users import UserCreate, UserUpdateActive
+from backend.app.repositories.auth_repositories import auth_repo
+from backend.app.repositories.user_repositories import user_repo
+from typing import Annotated
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 from backend.core.config import settings
-from ...models.auth import VerificationCreate, VerificationOut
-from ...models.users import UserCreate, UserUpdateActive
-from ...repositories.auth_repositories import auth_repo
-from ...repositories.user_repositories import user_repo
 
 password_reset_jwt_subject = 'present'
+reusable_oauth2 = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/login/access-token", auto_error=False
+)
+
+TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
 async def registration_user(new_user: UserCreate, db: AsyncSession):
@@ -27,7 +36,6 @@ async def registration_user(new_user: UserCreate, db: AsyncSession):
     verify = await auth_repo.create(db, schema=VerificationCreate(user_id=user.id))
     send_new_account_email(new_user.email, new_user.full_name(), new_user.password, verify.link)
     return {"msg": "Письмо с подтверждением отправлено"}
-
 
 
 async def verify_registration_user(uuid: VerificationOut, db: AsyncSession):

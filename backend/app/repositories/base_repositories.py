@@ -20,14 +20,15 @@ class AsyncBaseRepository(Generic[ModelType, CreateType, UpdateType]):
         """
         Сохраняет объект в базе данных.
         """
-        try:
-            db.add(db_obj)
-            await db.commit()
-            await db.refresh(db_obj)
-            return db_obj
-        except SQLAlchemyError as e:
-            await db.rollback()
-            raise Exception(f"Ошибка при сохранении объекта: {e}")
+        # try:
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+
+        return db_obj
+        # except SQLAlchemyError as e:
+        #     await db.rollback()
+        #     raise Exception(f"Ошибка при сохранении объекта: {e}")
 
     async def get_or_404(self, db: AsyncSession, id: int) -> ModelType:
         instance = await self.get(db=db, id=id)
@@ -67,8 +68,7 @@ class AsyncBaseRepository(Generic[ModelType, CreateType, UpdateType]):
         """
         Создает новый объект в базе данных.
         """
-        obj_data = jsonable_encoder(schema)
-        db_obj = self.model(**obj_data, **kwargs)
+        db_obj = self.model(**schema.model_dump(exclude_unset=True), **kwargs)
         return await self.save_db(db, db_obj)
 
     async def update(self, db: AsyncSession, model: ModelType, schema: UpdateType) -> ModelType:

@@ -2,14 +2,15 @@ from typing import Annotated
 import jwt
 from jwt import PyJWTError
 from fastapi import Depends, HTTPException, status
-from sqlmodel import select
 
+from backend.app.services.auth.auth_service import TokenDep
 from backend.app.models.auth import TokenPayload
 from backend.app.models.users import User
 from backend.app.repositories.user_repositories import user_repo
 from backend.core.config import settings
 
-from backend.app.base.utils.deps import TokenDep, SessionDep
+
+from backend.core.db import SessionDep
 
 
 async def get_current_user(db: SessionDep, token: TokenDep) -> User:

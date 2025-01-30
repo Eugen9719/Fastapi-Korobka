@@ -21,6 +21,7 @@ class StadiumRepository(AsyncBaseRepository[Stadiums, StadiumsCreate, StadiumsUp
         return await super().create(db=db, schema=schema, user_id=user_id)
 
     async def verification(self, db: AsyncSession, schema: StadiumVerificationUpdate, stadium_id: int):
+        "Нужно добавить проверку на админа"
         stadium = await self.get_or_404(db=db, id=stadium_id)
         is_active = True if schema.status == StadiumStatus.ADDED else False
         schema.is_active = is_active

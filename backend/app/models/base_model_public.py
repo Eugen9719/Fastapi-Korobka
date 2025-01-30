@@ -33,6 +33,8 @@ class StadiumsReadBase(SQLModel):
     user_id: int
 
 
+
+
 class BookingReadBase(SQLModel):
     id: int
     user_id: Optional[int]

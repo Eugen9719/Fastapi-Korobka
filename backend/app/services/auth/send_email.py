@@ -1,8 +1,10 @@
-from backend.app.base.utils.email import send_email
+from backend.app.services.email import send_email
 
 from pathlib import Path
 
 from backend.core.config import settings
+
+
 
 
 def send_reset_password_email(email_to: str, email: str, token: str):

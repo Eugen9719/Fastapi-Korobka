@@ -1,13 +1,13 @@
 import stripe
 from fastapi import APIRouter
 
-from ..base.auth.permissions import CurrentUser
-from ..base.utils.deps import SessionDep
+from backend.app.services.auth.permissions import CurrentUser
 
 from ..models.orders import OrderRead, OrderCreate
 
 from ..repositories.order_repositories import order_repo
 from ...core.config import settings
+from ...core.db import SessionDep
 
 order_router = APIRouter()
 

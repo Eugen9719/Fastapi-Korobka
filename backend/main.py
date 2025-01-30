@@ -1,15 +1,18 @@
 from fastapi import FastAPI
+
+
 from fastapi.staticfiles import StaticFiles
-from sqladmin import Admin
+from fastapi.templating import Jinja2Templates
+
 from starlette.middleware.cors import CORSMiddleware
 from backend.app import routers
-from backend.app.admin.admin import UserAdmin
+
 
 
 
 
 from backend.core.config import settings
-from backend.core.db import engine
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -17,7 +20,9 @@ app = FastAPI(
     DEBUG=True
 )
 
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 origins = [
     "http://localhost",
