@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..models.bookings import Booking, BookingCreate, BookingUpdate, BookingFacility
 from ..services import booking
-from ..services.booking.booking_service import BookingService
+
 
 
 class BookingRepository(AsyncBaseRepository[Booking, BookingCreate, BookingUpdate], QueryMixin):
@@ -70,7 +70,7 @@ class BookingRepository(AsyncBaseRepository[Booking, BookingCreate, BookingUpdat
 
     @staticmethod
     async def cancel_booking(db: AsyncSession, existing_booking: Booking):
-        await db.execute(delete(BookingService).where(BookingService.booking_id == existing_booking.id))
+        await db.execute(delete(BookingFacility).where(BookingFacility.booking_id == existing_booking.id))
         # Удаляем само бронирование
         await db.delete(booking)
         await db.commit()

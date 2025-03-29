@@ -2,11 +2,14 @@ from typing import Any, List
 from fastapi import APIRouter, UploadFile, File
 
 from backend.app.dependencies.auth_dep import CurrentUser, SuperUser
+from backend.app.dependencies.repositories import user_repo
+
+from backend.app.dependencies.services import user_service
 from backend.app.models.auth import Msg
 from backend.app.models.users import UserPublic, UserUpdate, UpdatePassword
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep
-from backend.app.dependencies.user_dep import user_repo, user_service
+
 
 user_router = APIRouter()
 
@@ -20,7 +23,7 @@ def user_me(current_user: CurrentUser):
 @user_router.patch("/me", response_model=UserPublic)
 @sentry_capture_exceptions
 async def update_user_me(*, db: SessionDep, schema: UserUpdate, user: CurrentUser) -> Any:
-    return await user_repo.update_user(db=db, model=user, schema=schema)
+    return await user_service.update_user(db=db, model=user, schema=schema)
 
 
 @user_router.patch("/me/password", response_model=Msg)
