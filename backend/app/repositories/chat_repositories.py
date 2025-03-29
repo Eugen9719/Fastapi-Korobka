@@ -7,6 +7,8 @@ from backend.app.repositories.base_repositories import AsyncBaseRepository
 
 
 class MessageRepositories(AsyncBaseRepository[Message, MessageCreate, MessageUpdate]):
+    def __init__(self):
+        super().__init__(Message)
     async def get_messages_between_users(self, db: AsyncSession, user_id_1: int, user_id_2: int):
         """
         Асинхронно находит и возвращает все сообщения между двумя пользователями.
@@ -29,4 +31,4 @@ class MessageRepositories(AsyncBaseRepository[Message, MessageCreate, MessageUpd
         return result.scalars().all()
 
 
-message_repo = MessageRepositories(Message)
+

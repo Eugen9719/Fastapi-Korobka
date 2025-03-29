@@ -1,19 +1,19 @@
 __all__ = ('User',
            'Verification',
-           'Stadiums',
+           'Stadium',
            'Image',
            'Booking',
+
            'StadiumReview',
-           'AdditionalService',
-           'Order',
+           'AdditionalFacility',
            'Message',
 
            )
 
-from backend.app.models.additional_service import AdditionalService
+from backend.app.models.additional_facility import AdditionalFacility
 from backend.app.models.auth import Verification
-from backend.app.models.orders import Order
+
 from backend.app.models.users import User
-from backend.app.models.stadiums import Stadiums, StadiumReview, Image
+from backend.app.models.stadiums import Stadium, StadiumReview, Image
 from backend.app.models.bookings import Booking
 from backend.app.models.chat import Message

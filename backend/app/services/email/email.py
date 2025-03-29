@@ -6,7 +6,7 @@ from emails.template import JinjaTemplate
 from backend.core.config import settings
 
 
-def send_email(email_to: str, subject_template="", html_template="", environment={}):
+def send_email(email_to: str, subject_template="", html_template="", environment=None):
     if environment is None:
         environment = {}
     message = emails.Message(

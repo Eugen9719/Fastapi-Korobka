@@ -1,40 +1,45 @@
-from typing import Generic, Type, TypeVar, Optional, Sequence, Tuple
+import logging
+from typing import Optional, Sequence, Tuple, Any
+
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import SQLModel
 from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
-
-ModelType = TypeVar("ModelType", bound=SQLModel)
-CreateType = TypeVar("CreateType", bound=SQLModel)
-UpdateType = TypeVar("UpdateType", bound=SQLModel)
+from backend.app.abstractions.repository import IQueryRepository, ModelType, ICrudRepository, CreateType, UpdateType
 
 
-class AsyncBaseRepository(Generic[ModelType, CreateType, UpdateType]):
-    def __init__(self, model: Type[ModelType]):
+logger = logging.getLogger(__name__)
+
+
+
+
+
+# Миксин для дополнительных операций
+class QueryMixin(IQueryRepository[ModelType]):
+    def __init__(self, model: type[ModelType]):
         self.model = model
 
-    @staticmethod
-    async def save_db(db: AsyncSession, db_obj: ModelType) -> ModelType:
-        """
-        Сохраняет объект в базе данных.
-        """
-        # try:
-        db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
+    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None):
+        query = select(self.model).where(id == self.model.id)
+        if options:
+            query = query.options(*options)
+        result = await db.execute(query)
+        instance = result.scalar_one_or_none()  # Возвращает первый результат (или None)
 
-        return db_obj
-        # except SQLAlchemyError as e:
-        #     await db.rollback()
-        #     raise Exception(f"Ошибка при сохранении объекта: {e}")
-
-    async def get_or_404(self, db: AsyncSession, id: int) -> ModelType:
-        instance = await self.get(db=db, id=id)
         if not instance:
             raise HTTPException(status_code=404, detail="Объект не найден")
+
         return instance
+
+    async def get_many(self, db: AsyncSession, **kwargs) -> Sequence[ModelType]:
+        """
+        Простой поиск по точным совпадениям полей.
+        Пример: await get_many(db, status='active', is_verified=True)
+        """
+        result = await db.execute(select(self.model).filter_by(**kwargs))
+
+        return result.scalars().all()
 
     async def exist(self, db: AsyncSession, **kwargs) -> bool:
         """
@@ -43,42 +48,101 @@ class AsyncBaseRepository(Generic[ModelType, CreateType, UpdateType]):
         result = await db.execute(select(self.model).filter_by(**kwargs))
         return result.scalar() is not None
 
-    async def get(self, db: AsyncSession, **kwargs) -> Optional[ModelType]:
+    async def base_filter(self, db: AsyncSession, *filters, options=None):
         """
-        Получает объект по заданным параметрам фильтрации.
+        Расширенный поиск с поддержкой сложных условий и eager loading.
+        Пример: await base_filter(db, User.age > 18, options=[joinedload(...)])
         """
-        result = await db.execute(select(self.model).filter_by(**kwargs))
-        return result.scalar_one_or_none()
+        query = select(self.model).where(*filters)
 
-    async def get_by_filter(self, db: AsyncSession, *filters) -> Optional[ModelType]:
-        """
-        Получает объект по сложным фильтрам.
-        """
-        result = await db.execute(select(self.model).filter(*filters))
-        return result.scalar()
+        if options:
+            query = query.options(*options)
 
-    async def get_many(self, db: AsyncSession, **kwargs) -> Sequence[ModelType]:
-        """
-        Получает список объектов по заданным параметрам фильтрации.
-        """
-        result = await db.execute(select(self.model).filter_by(**kwargs))
+        result = await db.execute(query)
         return result.scalars().all()
+
+    @staticmethod
+    async def paginate(query, db: AsyncSession, page: int, size: int):
+        offset = (page - 1) * size
+
+        # Подсчет количества записей
+        total_query = select(func.count()).select_from(query)
+        total_result = await db.execute(total_query)
+        total = total_result.scalar()
+
+        # Получаем записи с пагинацией
+        result = await db.execute(query.offset(offset).limit(size))
+        items = result.scalars().all()
+
+        pages = (total + size - 1) // size if total else 1
+
+        return {
+            "items": items,
+            "page": page,
+            "pages": pages
+        }
+
+
+class AsyncBaseRepository(ICrudRepository[ModelType, CreateType, UpdateType]):
+    def __init__(self, model: type[ModelType]):
+        self.model = model
+
+    @staticmethod
+    async def save_db(db: AsyncSession, db_obj: ModelType) -> ModelType:
+        """
+        Сохраняет объект в базе данных.
+            db: Асинхронная сессия SQLAlchemy
+            db_obj: Объект модели для сохранения
+        """
+        try:
+            db.add(db_obj)
+            await db.commit()
+            await db.refresh(db_obj)
+            return db_obj
+        except Exception as e:
+            await db.rollback()
+            raise e
 
     async def create(self, db: AsyncSession, schema: CreateType, **kwargs) -> ModelType:
         """
         Создает новый объект в базе данных.
         """
-        db_obj = self.model(**schema.model_dump(exclude_unset=True), **kwargs)
-        return await self.save_db(db, db_obj)
+        try:
+            data = schema.model_dump(exclude_unset=True)
+            logger.info(f"Создание объекта {self.model.__name__} с данными: {data}, доп. параметры: {kwargs}")
 
-    async def update(self, db: AsyncSession, model: ModelType, schema: UpdateType) -> ModelType:
+            db_obj = self.model(**data, **kwargs)
+            saved_obj = await self.save_db(db, db_obj)
+
+            logger.info(f"Объект {self.model.__name__} создан: id={saved_obj.id}")
+
+            return saved_obj
+
+        except Exception as e:
+            logger.error(f"Create error: {e}")
+            raise HTTPException(status_code=400, detail="Ошибка при создании объекта")
+
+    async def update(self, db: AsyncSession, model: ModelType, schema: UpdateType | dict) -> ModelType:
         """
         Обновляет существующий объект в базе данных.
         """
-        obj_data = schema.model_dump(exclude_unset=True)
-        for key, value in obj_data.items():
-            setattr(model, key, value)
-        return await self.save_db(db, model)
+        try:
+            obj_data = schema if isinstance(schema, dict) else schema.model_dump(exclude_none=True)
+            for key, value in obj_data.items():
+                setattr(model, key, value)
+            return await self.save_db(db, model)
+        except Exception as e:
+            logger.error(f'Ошибка при обновлении: {e}')
+            raise HTTPException(status_code=400, detail="Ошибка при обновлении объекта")
+
+    async def get(self, db: AsyncSession, **kwargs) -> Optional[ModelType]:
+        """Получение объекта по параметрам"""
+        try:
+            result = await db.execute(select(self.model).filter_by(**kwargs))
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            logger.error(f"Ошибка: {e}")
+            raise HTTPException(status_code=500, detail="Ошибка получения объекта")
 
     async def remove(self, db: AsyncSession, **kwargs) -> Tuple[bool, Optional[ModelType]]:
         """
@@ -95,34 +159,7 @@ class AsyncBaseRepository(Generic[ModelType, CreateType, UpdateType]):
                 raise Exception(f"Ошибка при удалении объекта: {e}")
         return False, None
 
-    @classmethod
-    def check_current_user_or_admin(cls, current_user, model: ModelType) -> bool:
-        """
-        Проверяет, является ли пользователь администратором или создателем объекта.
-        """
-        if not current_user.is_superuser and model.user_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Только админ или создатель могут проводить операции")
-        return True
 
-    @classmethod
-    def check_current_user(cls, current_user, model: ModelType) -> None:
-        """
-        Проверяет, что текущий пользователь является создателем объекта.
-        """
-        if not current_user.is_superuser and model.user_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Вы не можете проводить эту операцию")
 
-    # def get_all(self, db: Session, **kwargs) -> Sequence[Row[Any] | RowMapping | Any]:
-    #     """
-    #     Получает список объектов, отфильтрованный по заданным параметрам.
-    #     """
-    #     query = select(self.model)
-    #     if kwargs:
-    #         query = query.filter_by(**kwargs)
-    #     return db.execute(query).scalars().all()
 
-    # def all(self, db: Session, skip: int = 0, limit: int = 100) -> Sequence[ModelType]:
-    #     """
-    #     Получает все объекты с поддержкой пагинации.
-    #     """
-    #     return db.exec(select(self.model).offset(skip).limit(limit)).all()
+

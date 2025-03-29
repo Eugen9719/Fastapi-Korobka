@@ -1,21 +1,22 @@
 import logging
 from typing import List, Dict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from backend.app.services.auth.permissions import CurrentUser
-
+from backend.app.dependencies.auth_dep import CurrentUser
+from backend.app.dependencies.repositories import message_repo
 from backend.app.models.chat import MessageRead, MessageCreate
-from backend.app.repositories.chat_repositories import message_repo
 from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
 
+from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep
 
 message_router = APIRouter()
 
 
 @message_router.get("/messages/{user_id}", response_model=List[MessageRead])
+@sentry_capture_exceptions
 async def get_messages(db: SessionDep, user_id: int, current_user: CurrentUser):
     return await message_repo.get_messages_between_users(db=db, user_id_1=user_id, user_id_2=current_user.id) or []
 
@@ -23,6 +24,7 @@ async def get_messages(db: SessionDep, user_id: int, current_user: CurrentUser):
 logger = logging.getLogger(__name__)
 
 @message_router.post("/messages", response_model=MessageRead)
+@sentry_capture_exceptions
 async def send_message(db: SessionDep, schema: MessageCreate, current_user: CurrentUser):
     # Создаем сообщение
     message = await message_repo.create(db=db, schema=schema, sender_id=current_user.id)
@@ -62,6 +64,7 @@ async def notify_user(user_id: int, message: dict):
 
 # WebSocket эндпоинт для соединений
 @message_router.websocket("/ws/{user_id}")
+@sentry_capture_exceptions
 async def websocket_endpoint(websocket: WebSocket, user_id: int):
     # Принимаем WebSocket-соединение
     await websocket.accept()

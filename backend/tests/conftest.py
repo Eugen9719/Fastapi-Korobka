@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -13,11 +14,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
 from sqlmodel import SQLModel
 
-from backend.app.models import User, Stadiums, StadiumReview, Booking
+from backend.app.dependencies.user_dep import redis_client
+from backend.app.models import User, Stadium, StadiumReview, Booking
 from backend.app.models.users import UserCreate
-from backend.app.repositories.user_repositories import user_repo
-from backend.tests.utils.utils import random_email, random_lower_string, random_username
 
+
+from backend.tests.utils.utils import random_email, random_lower_string, random_username
 
 os.environ["ENVIRONMENT"] = "test"
 from backend.main import app
@@ -46,7 +48,7 @@ def event_loop():
 
 def open_json(model: str):
     """Загрузка данных из JSON."""
-    file_path = os.path.join("backend/tests/fixtures/", f"{model}.json")
+    file_path = os.path.join("backend/tests/data/", f"{model}.json")
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл {file_path} не найден.")
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -66,10 +68,9 @@ async def create_tables(test_engine):
     logger.info("Удаление всех таблиц из тестовой базы данных.")
     async with test_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
+        await conn.run_sync(SQLModel.metadata.create_all)
     """Создание и удаление таблиц."""
     logger.info("Создание таблиц в тестовой базе данных.")
-    async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
     yield
     logger.info("Удаление таблиц из тестовой базы данных.")
     async with test_engine.begin() as conn:
@@ -80,7 +81,7 @@ async def create_tables(test_engine):
 async def db(test_engine, create_tables) -> AsyncSession:
     """Асинхронная сессия базы данных."""
     logger.info("Создание сессии базы данных для тестов.")
-    async with AsyncSession(test_engine) as session:
+    async with AsyncSession(test_engine, expire_on_commit=False) as session:
         yield session
 
 
@@ -101,7 +102,7 @@ async def prepare_data(db: AsyncSession):
 
     stadiums = open_json("stadiums")
     for stadium_data in stadiums:
-        stadium = Stadiums(**stadium_data)
+        stadium = Stadium(**stadium_data)
         db.add(stadium)
 
     await db.commit()  # Подтверждение добавления стадионов
@@ -137,25 +138,39 @@ async def client() -> AsyncClient:
         yield client
 
 
-@pytest.fixture()
-async def create_user(db: AsyncSession):
-    async def _create_user():
-        email = random_email()
-        password = random_lower_string()
-        user_in = UserCreate(email=email, password=password)
-        new_user = await user_repo.create(db=db, schema=user_in)
-        return new_user, password
+@pytest.fixture(autouse=True)
+def mock_redis(monkeypatch):
+    async_mock = AsyncMock()
 
-    return _create_user
+    # Мокаем методы работы с кешем
+    async_mock.fetch_cached_data.return_value = None  # Чтобы кеш всегда был пустым
+    async_mock.cache_data.return_value = None  # Заглушка вместо реального кеширования
+    async_mock.delete_cache_by_prefix.return_value = None
 
-
-@pytest.fixture()
-async def create_superuser(create_user, db: AsyncSession):
-    user, _ = await create_user()
-    user.is_superuser = True
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user, _
+    # Подменяем реальный объект redis_client
+    monkeypatch.setattr(redis_client, "get_client", AsyncMock(return_value=async_mock))
+    monkeypatch.setattr(redis_client, "fetch_cached_data", async_mock.fetch_cached_data)
+    monkeypatch.setattr(redis_client, "cache_data", async_mock.cache_data)
+    monkeypatch.setattr(redis_client, "delete_cache_by_prefix", async_mock.delete_cache_by_prefix)
 
 
+# @pytest.fixture()
+# async def create_user(db: AsyncSession):
+#     async def _create_user():
+#         email = random_email()
+#         password = random_lower_string()
+#         user_in = UserCreate(email=email, password=password)
+#         new_user = await user_repo.create(db=db, schema=user_in)
+#         return new_user, password
+#
+#     return _create_user
+#
+#
+# @pytest.fixture()
+# async def create_superuser(create_user, db: AsyncSession):
+#     user, _ = await create_user()
+#     user.is_superuser = True
+#     db.add(user)
+#     await db.commit()
+#     await db.refresh(user)
+#     return user, _

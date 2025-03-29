@@ -10,9 +10,8 @@
     "price": 200,
     "country": "Россия",
     "city": "Донецк",
-
     "user_id": 1,
-    "status": "VERIFICATION"
+    "status": "DRAFT"
   },
   {
     "name": "Открытие  Арена",
@@ -26,7 +25,6 @@
     "country": "Россия",
     "city": "Москва",
     "user_id": 1
-
   },
   {
     "name": "Открытие  Арена crud",
@@ -40,6 +38,31 @@
     "country": "Россия",
     "city": "Москва",
     "user_id": 1
-
+  },
+  {
+    "name": "Стадион 1",
+    "slug": "stadium_1",
+    "address": "ул. Шевченко",
+    "is_active": true,
+    "text": "string",
+    "description": "string",
+    "additional_info": "string",
+    "price": 300,
+    "country": "Россия",
+    "city": "Москва",
+    "user_id": 1
+  },
+  {
+    "name": "Стадион 2",
+    "slug": "stadium_2",
+    "address": "ул. Шевченко",
+    "is_active": true,
+    "text": "string",
+    "description": "string",
+    "additional_info": "string",
+    "price": 300,
+    "country": "Россия",
+    "city": "Москва",
+    "user_id": 1
   }
 ]

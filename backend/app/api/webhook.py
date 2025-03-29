@@ -1,9 +1,10 @@
 import stripe
 from fastapi import APIRouter, Request, HTTPException
 
+from backend.app.dependencies.repositories import booking_repo
+from backend.app.models.bookings import StatusBooking
 
-from backend.app.models.orders import StatusEnum
-from backend.app.repositories.order_repositories import order_repo
+from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.config import settings
 from backend.core.db import SessionDep
 
@@ -11,10 +12,11 @@ webhook_router = APIRouter()
 
 
 @webhook_router.post('/webhook/stripe')
+@sentry_capture_exceptions
 async def stripe_webhook(request: Request, db: SessionDep):
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
-    event = None
+    event= None
 
     try:
         event = stripe.Webhook.construct_event(
@@ -28,11 +30,12 @@ async def stripe_webhook(request: Request, db: SessionDep):
     # Обработка события успешной оплаты
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        order_id = session["metadata"]["order_id"]
+        booking_id = session["metadata"]["booking_id"]
 
-        order = order_repo.get_or_404(db=db, id=order_id)
-        if order.status == StatusEnum.PENDING:
-            order.status = StatusEnum.COMPLETED
-            order_repo.save_db(db, order)
-
+        booking = await booking_repo.get_or_404(db=db, id=int(booking_id))
+        if booking.status == StatusBooking.PENDING:
+            booking.status = StatusBooking.COMPLETED
+            booking.stripe_payment_intent_id = session.get("payment_intent")
+            await booking_repo.save_db(db, booking)
     return {"success": True}
+
