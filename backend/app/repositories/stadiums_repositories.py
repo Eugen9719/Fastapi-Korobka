@@ -1,15 +1,15 @@
 import logging
 from datetime import datetime
 
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from .base_repositories import AsyncBaseRepository, QueryMixin
 from ..models import AdditionalFacility, Booking
+from ..models.additional_facility import StadiumFacilityDelete
 from ..models.stadiums import StadiumsCreate, Stadium, StadiumsUpdate, StadiumFacility
+
 logger = logging.getLogger(__name__)
-
-
-
 
 
 class StadiumRepository(AsyncBaseRepository[Stadium, StadiumsCreate, StadiumsUpdate], QueryMixin):
@@ -57,16 +57,26 @@ class StadiumRepository(AsyncBaseRepository[Stadium, StadiumsCreate, StadiumsUpd
         ) is not None
 
     @staticmethod
-    async def link_service_to_stadium(db: AsyncSession,stadium_id: int,facility_id: int,   ) -> None:
+    async def link_service_to_stadium(db: AsyncSession, stadium_id: int, facility_id: int, ) -> None:
         """Создает связь между стадионом и сервисом"""
         db.add(StadiumFacility(
             stadium_id=stadium_id,
             facility_id=facility_id,
         ))
 
+    @staticmethod
+    async def delete_service(db: AsyncSession, schema: StadiumFacilityDelete):
+        return await db.execute(
+            delete(StadiumFacility)
+            .where(
+                StadiumFacility.stadium_id == schema.stadium_id,
+                StadiumFacility.facility_id == schema.facility_id
+            )
+            .returning(StadiumFacility.id)
+        )
 
     @staticmethod
-    async def search_available_stadiums( db: AsyncSession, city: str, start_time: datetime, end_time: datetime):
+    async def search_available_stadiums(db: AsyncSession, city: str, start_time: datetime, end_time: datetime):
         # Подзапрос для поиска стадионов, которые уже забронированы в заданном диапазоне времени.
         subquery = (
             select(Booking.stadium_id)

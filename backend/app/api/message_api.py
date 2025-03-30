@@ -10,7 +10,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
 
 from backend.app.services.decorators import sentry_capture_exceptions
-from backend.core.db import SessionDep
+from backend.core.db import SessionDep, TransactionSessionDep
 
 message_router = APIRouter()
 
@@ -23,9 +23,10 @@ async def get_messages(db: SessionDep, user_id: int, current_user: CurrentUser):
 
 logger = logging.getLogger(__name__)
 
+
 @message_router.post("/messages", response_model=MessageRead)
 @sentry_capture_exceptions
-async def send_message(db: SessionDep, schema: MessageCreate, current_user: CurrentUser):
+async def send_message(db: TransactionSessionDep, schema: MessageCreate, current_user: CurrentUser):
     # Создаем сообщение
     message = await message_repo.create(db=db, schema=schema, sender_id=current_user.id)
 

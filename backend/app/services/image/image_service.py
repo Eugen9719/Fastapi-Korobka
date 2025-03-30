@@ -20,7 +20,7 @@ class CloudinaryImageHandler(ImageHandler):
             folder = f"{self.model.__tablename__.lower()}/id-{instance.id}"
             result = cloudinary.uploader.upload(file.file, folder=folder, use_filename=True)
             instance.image_url = result["secure_url"]
-            await db.commit()
+            await db.flush()
             await db.refresh(instance)
             return {"url": result["secure_url"], "public_id": result["public_id"]}
         except Exception as e:
@@ -37,7 +37,7 @@ class CloudinaryImageHandler(ImageHandler):
                 result = cloudinary.uploader.destroy(instance.image_url.split('/')[-1])
                 if result.get('result') == 'ok':
                     instance.image_url = None
-                    await db.commit()
+                    await db.flush()
             except Exception as e:
                 logger.error(f"Ошибка удаления фото: {str(e)}")
                 raise HTTPException(status_code=500, detail=f"Ошибка удаления старого фото: {str(e)}")

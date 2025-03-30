@@ -10,8 +10,7 @@ from backend.app.models.users import UserCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core import security
 from backend.core.config import settings
-from backend.core.db import SessionDep
-
+from backend.core.db import SessionDep, TransactionSessionDep
 
 auth_router = APIRouter()
 
@@ -26,7 +25,6 @@ async def login_access_token(db: SessionDep, form_data: Annotated[OAuth2Password
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
     permission_service.verify_active(user)
 
-
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(
@@ -37,13 +35,13 @@ async def login_access_token(db: SessionDep, form_data: Annotated[OAuth2Password
 
 @auth_router.post("/registration", response_model=Msg)
 @sentry_capture_exceptions
-async def user_registration(new_user: UserCreate, db: SessionDep):
+async def user_registration(new_user: UserCreate, db: TransactionSessionDep):
     return await registration_service.register_user(db=db, new_user=new_user)
 
 
 @auth_router.post("/confirm_email", response_model=Msg)
 @sentry_capture_exceptions
-async def confirm_email(uuid: VerificationOut, db: SessionDep):
+async def confirm_email(uuid: VerificationOut, db: TransactionSessionDep):
     return await registration_service.verify_user(db=db, uuid=uuid)
 
 
@@ -55,5 +53,5 @@ async def recover_password(email: str, db: SessionDep):
 
 @auth_router.post("/reset_password", response_model=Msg)
 @sentry_capture_exceptions
-async def reset_password(db: SessionDep, token: str = Body(...), new_password: str = Body(...), ):
+async def reset_password(db: TransactionSessionDep, token: str = Body(...), new_password: str = Body(...), ):
     return await user_service.password_reset(db, token, new_password)

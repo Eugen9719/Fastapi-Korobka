@@ -9,6 +9,7 @@ from backend.app.models.stadiums import  CreateReview, UpdateReview
 from backend.app.repositories.review_repository import ReviewRepository
 from backend.app.repositories.stadiums_repositories import StadiumRepository
 from backend.app.services.auth.permission import PermissionService
+from backend.app.services.decorators import HttpExceptionWrapper
 
 from backend.app.services.redis import RedisClient
 
@@ -22,7 +23,7 @@ class ReviewService:
         self.permission = permission
         self.redis = redis
 
-
+    @HttpExceptionWrapper
     async def create_review(self, db: AsyncSession, schema: CreateReview, stadium_id: int, user: User):
         stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
         if await self.review_repository.check_duplicate_review(db=db, user_id=user.id, stadium_id=stadium_id):
@@ -31,7 +32,7 @@ class ReviewService:
         logger.info(f"отзыв {review.id} успешно создан пользователем {user.id}")
         return review
 
-
+    @HttpExceptionWrapper
     async def update_review(self, db: AsyncSession, schema: UpdateReview, review_id: int, user: User):
         review = await self.review_repository.get_or_404(db=db, id=review_id)
         self.permission.check_current_user_or_admin(current_user=user, model=review)
@@ -39,6 +40,7 @@ class ReviewService:
         logger.info(f"отзыв {review_id} успешно обновлен пользователем {user.id}")
         return review
 
+    @HttpExceptionWrapper
     async def delete_review(self, db: AsyncSession, user: User, review_id: int):
         review = await self.review_repository.get_or_404(db=db, id=review_id)
         self.permission.check_current_user_or_admin(current_user=user, model=review)

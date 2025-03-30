@@ -6,6 +6,7 @@ from backend.app.models.auth import VerificationCreate, VerificationOut
 from backend.app.models.users import UserCreate, UserUpdateActive
 from backend.app.repositories.user_repositories import UserRepository
 from backend.app.repositories.verification_repository import VerifyRepository
+from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.email.email_service import EmailService
 
 
@@ -18,6 +19,7 @@ class RegistrationService:
         self.email_service = email_service
         self.pass_service = pass_service
 
+    @HttpExceptionWrapper
     async def register_user(self, new_user: UserCreate, db: AsyncSession):
         existing_user = await self.user_repository.get_by_email(db, email=new_user.email)
         if existing_user:
@@ -28,6 +30,7 @@ class RegistrationService:
         await self.email_service.send_verification_email(new_user.email, new_user.email, new_user.password, verify.link)
         return {"msg": "Письмо с подтверждением отправлено"}
 
+    @HttpExceptionWrapper
     async def verify_user(self, uuid: VerificationOut, db: AsyncSession):
         verify = await self.verif_repository.get(db, link=uuid.link)
         if not verify:

@@ -8,11 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
 from backend.app.abstractions.repository import IQueryRepository, ModelType, ICrudRepository, CreateType, UpdateType
 
-
 logger = logging.getLogger(__name__)
-
-
-
 
 
 # Миксин для дополнительных операций
@@ -89,51 +85,24 @@ class AsyncBaseRepository(ICrudRepository[ModelType, CreateType, UpdateType]):
 
     @staticmethod
     async def save_db(db: AsyncSession, db_obj: ModelType) -> ModelType:
-        """
-        Сохраняет объект в базе данных.
-            db: Асинхронная сессия SQLAlchemy
-            db_obj: Объект модели для сохранения
-        """
-        try:
-            db.add(db_obj)
-            await db.commit()
-            await db.refresh(db_obj)
-            return db_obj
-        except Exception as e:
-            await db.rollback()
-            raise e
+        """Сохраняет объект в базе данных"""
+        merged_obj = await db.merge(db_obj)
+        await db.flush()
+        await db.refresh(merged_obj)
+        return merged_obj
 
     async def create(self, db: AsyncSession, schema: CreateType, **kwargs) -> ModelType:
-        """
-        Создает новый объект в базе данных.
-        """
-        try:
-            data = schema.model_dump(exclude_unset=True)
-            logger.info(f"Создание объекта {self.model.__name__} с данными: {data}, доп. параметры: {kwargs}")
-
-            db_obj = self.model(**data, **kwargs)
-            saved_obj = await self.save_db(db, db_obj)
-
-            logger.info(f"Объект {self.model.__name__} создан: id={saved_obj.id}")
-
-            return saved_obj
-
-        except Exception as e:
-            logger.error(f"Create error: {e}")
-            raise HTTPException(status_code=400, detail="Ошибка при создании объекта")
+        db_obj = self.model(**schema.model_dump(exclude_unset=True), **kwargs)
+        return await self.save_db(db, db_obj)
 
     async def update(self, db: AsyncSession, model: ModelType, schema: UpdateType | dict) -> ModelType:
         """
         Обновляет существующий объект в базе данных.
         """
-        try:
-            obj_data = schema if isinstance(schema, dict) else schema.model_dump(exclude_none=True)
-            for key, value in obj_data.items():
-                setattr(model, key, value)
-            return await self.save_db(db, model)
-        except Exception as e:
-            logger.error(f'Ошибка при обновлении: {e}')
-            raise HTTPException(status_code=400, detail="Ошибка при обновлении объекта")
+        obj_data = schema if isinstance(schema, dict) else schema.model_dump(exclude_none=True)
+        for key, value in obj_data.items():
+            setattr(model, key, value)
+        return await self.save_db(db, model)
 
     async def get(self, db: AsyncSession, **kwargs) -> Optional[ModelType]:
         """Получение объекта по параметрам"""
@@ -150,16 +119,7 @@ class AsyncBaseRepository(ICrudRepository[ModelType, CreateType, UpdateType]):
         """
         obj = await self.get(db, **kwargs)
         if obj:
-            try:
-                await db.delete(obj)
-                await db.commit()
-                return True, obj
-            except SQLAlchemyError as e:
-                await db.rollback()
-                raise Exception(f"Ошибка при удалении объекта: {e}")
+            await db.delete(obj)
+            await db.flush()
+            return True, obj
         return False, None
-
-
-
-
-

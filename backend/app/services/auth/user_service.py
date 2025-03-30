@@ -8,6 +8,7 @@ from backend.app.models import User
 from backend.app.models.auth import Msg
 from backend.app.models.users import UpdatePassword, UserUpdate
 from backend.app.repositories.user_repositories import UserRepository
+from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.email.email_service import EmailService
 from backend.app.services.auth.password_service import PasswordService
 from backend.app.services.auth.permission import PermissionService
@@ -15,15 +16,16 @@ from backend.app.services.auth.permission import PermissionService
 
 class UserService:
     """Сервис управления пользователями"""
-    def __init__(self, user_repository: UserRepository,permission: PermissionService, pass_service: PasswordService,email_service: EmailService, image_handler: ImageHandler):
+
+    def __init__(self, user_repository: UserRepository, permission: PermissionService, pass_service: PasswordService,
+                 email_service: EmailService, image_handler: ImageHandler):
         self.user_repository = user_repository
         self.permission = permission
         self.pass_service = pass_service
         self.image_handler = image_handler
         self.email_service = email_service
 
-
-
+    @HttpExceptionWrapper
     async def update_user(self, db: AsyncSession, schema: UserUpdate, model: User) -> User:
         """Обновление данных пользователя с проверкой уникальности email."""
         existing_user = await self.user_repository.get_by_email(db, email=schema.email)
@@ -31,6 +33,7 @@ class UserService:
             raise HTTPException(status_code=400, detail="Email is already in use by another user.")
         return await self.user_repository.update(db=db, model=model, schema=schema)
 
+    @HttpExceptionWrapper
     async def update_password(self, db: AsyncSession, model: User, schema: UpdatePassword) -> Msg:
         """Обновление пароля"""
         if not self.pass_service.verify_password(schema.current_password, model.hashed_password):
@@ -41,17 +44,17 @@ class UserService:
         await self.user_repository.save_db(db, model)
         return Msg(msg="Пароль обновлен успешно")
 
+    @HttpExceptionWrapper
     async def password_recovery(self, db: AsyncSession, email, ):
         user = await self.user_repository.get_by_email(db, email=email)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail='Пользователя с этим email нет в системе')
-        password_reset_token =self.pass_service.generate_password_reset_token(email)
+        password_reset_token = self.pass_service.generate_password_reset_token(email)
         await self.email_service.send_reset_password(email_to=user.email, email=email, token=password_reset_token)
         return {"msg": "Сброс пароля отправлен на email"}
 
-
-
+    @HttpExceptionWrapper
     async def password_reset(self, db: AsyncSession, token: str, new_password: str):
         email = self.pass_service.verify_password_reset_token(token)
         if not email:
@@ -67,10 +70,7 @@ class UserService:
         await self.user_repository.save_db(db, user)
         return {"msg": "Пароль успешно изменен"}
 
-
-
-
-
+    @HttpExceptionWrapper
     async def upload_image(self, db: AsyncSession, model: User, file: UploadFile = File(...)) -> dict:
         """Загрузка изображения для пользователя."""
         user = await self.user_repository.get_or_404(db, id=model.id)
@@ -78,7 +78,7 @@ class UserService:
         await self.image_handler.delete_old_image(db, user)
         return await self.image_handler.upload_image(db, user, file)
 
-
+    @HttpExceptionWrapper
     async def delete_user(self, db: AsyncSession, current_user: User, user_id: int) -> Msg:
         """Удаление пользователя с проверкой прав."""
         target_user = await self.user_repository.get_or_404(db, id=user_id)

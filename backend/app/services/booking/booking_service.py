@@ -9,24 +9,28 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from backend.app.models import User, Stadium
-from backend.app.models.bookings import BookingCreate, StatusBooking, Booking, BookingFacility, PaginatedBookingsResponse
+from backend.app.models.bookings import BookingCreate, StatusBooking, Booking, BookingFacility, \
+    PaginatedBookingsResponse
 from backend.app.repositories.bookings_repositories import BookingRepository
 from backend.app.repositories.facility_repository import FacilityRepository
 from backend.app.repositories.stadiums_repositories import StadiumRepository
 from backend.app.services.auth.permission import PermissionService
+from backend.app.services.decorators import HttpExceptionWrapper
 
 
 class BookingService:
     """Сервис управления бронированием"""
 
-    def __init__(self, booking_repository: BookingRepository, stadium_repository: StadiumRepository, facility_repository: FacilityRepository,
+    def __init__(self, booking_repository: BookingRepository, stadium_repository: StadiumRepository,
+                 facility_repository: FacilityRepository,
                  permission: PermissionService):
         self.booking_repository = booking_repository
         self.stadium_repository = stadium_repository
         self.facility_repository = facility_repository
         self.permission = permission
 
-    async def _check_overlapping_booking(self, db: AsyncSession, stadium_id: int, start_time: datetime, end_time: datetime):
+    async def _check_overlapping_booking(self, db: AsyncSession, stadium_id: int, start_time: datetime,
+                                         end_time: datetime):
         overlapping_booking = await self.booking_repository.overlapping_booking(db, stadium_id, start_time, end_time)
         if overlapping_booking:
             raise HTTPException(status_code=400, detail="Этот промежуток времени уже забронирован.")
@@ -39,6 +43,7 @@ class BookingService:
         duration = Decimal((end_time - start_time).total_seconds()) / Decimal(3600)  # Время в часах
         return float(duration * price_per_hour)
 
+    @HttpExceptionWrapper
     async def create_booking(self, db: AsyncSession, schema: BookingCreate, user: User):
         # 1. Проверка пересечений бронирований
         await self._check_overlapping_booking(db, schema.stadium_id, schema.start_time, schema.end_time)
@@ -87,11 +92,13 @@ class BookingService:
             facilities_data=facilities_data
         )
 
+    @HttpExceptionWrapper
     async def create_payment_session(self, db: AsyncSession, booking_id: int, success_url: str, cancel_url: str):
         booking = await self.booking_repository.get_or_404(db=db,
                                                            id=booking_id,
                                                            options=[selectinload(Booking.stadium),
-                                                                    selectinload(Booking.booking_facility).selectinload(BookingFacility.facility)])
+                                                                    selectinload(Booking.booking_facility).selectinload(
+                                                                        BookingFacility.facility)])
 
         if booking.status != StatusBooking.PENDING:
             raise HTTPException(status_code=400, detail="Order must be pending to create a payment session.")
@@ -143,21 +150,30 @@ class BookingService:
 
         return session.url
 
+    @HttpExceptionWrapper
     async def get_booking_from_date(self, db: AsyncSession, stadium_id: int, date: str):
         selected_date = datetime.strptime(date, "%Y-%m-%d").date()
-        result = self.booking_repository.get_booking_from_date(db=db, stadium_id=stadium_id, selected_date=selected_date)
+        result = self.booking_repository.get_booking_from_date(db=db, stadium_id=stadium_id,
+                                                               selected_date=selected_date)
         return result
 
+    @HttpExceptionWrapper
     async def booking_stadium(self, db: AsyncSession, stadium_id: int, user: User):
         return await self.booking_repository.base_filter(db, Booking.stadium_id == stadium_id,
-                                                         options=[selectinload(Booking.stadium), selectinload(Booking.user)])
+                                                         options=[selectinload(Booking.stadium),
+                                                                  selectinload(Booking.user)])
 
+    @HttpExceptionWrapper
     async def get_booking(self, db: AsyncSession, booking_id: int, ):
-        return await self.booking_repository.get_or_404(db=db, id=booking_id, options=[selectinload(Booking.stadium), selectinload(Booking.user)])
+        return await self.booking_repository.get_or_404(db=db, id=booking_id, options=[selectinload(Booking.stadium),
+                                                                                       selectinload(Booking.user)])
 
+    @HttpExceptionWrapper
     async def get_bookings_user(self, db: AsyncSession, user: User):
-        return await self.booking_repository.base_filter(db, Booking.user_id == user.id, options=[selectinload(Booking.stadium)])
+        return await self.booking_repository.base_filter(db, Booking.user_id == user.id,
+                                                         options=[selectinload(Booking.stadium)])
 
+    @HttpExceptionWrapper
     async def bookings_for_vendor(self, db: AsyncSession, user: User, page: int, size: int):
         query = (
             select(Booking)
@@ -173,9 +189,10 @@ class BookingService:
         paginated_data = await self.booking_repository.paginate(query, db, page, size)
         return PaginatedBookingsResponse(**paginated_data)
 
+    @HttpExceptionWrapper
     async def delete_booking(self, db: AsyncSession, user: User, booking_id: int):
         booking = await self.booking_repository.get_or_404(db=db, id=booking_id)
-        if not  booking.status == StatusBooking.PENDING:
+        if not booking.status == StatusBooking.PENDING:
             raise HTTPException(status_code=400, detail="Удалять бронирования можно только со статусом 'Pending'")
 
         self.permission.check_current_user_or_admin(current_user=user, model=booking)

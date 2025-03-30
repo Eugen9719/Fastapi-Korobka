@@ -8,34 +8,35 @@ from backend.app.models.auth import Msg
 from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, StadiumsCreate, \
     StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility
 from backend.app.services.decorators import sentry_capture_exceptions
-from backend.core.db import SessionDep
+from backend.core.db import SessionDep, TransactionSessionDep
 
 stadium_router = APIRouter()
 
 
 @stadium_router.post("/create", response_model=StadiumsRead)
 @sentry_capture_exceptions
-async def create_stadium(db: SessionDep, current_user: CurrentUser, schema: StadiumsCreate):
+async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, schema: StadiumsCreate):
     return await stadium_service.create_stadium(db, schema=schema, user=current_user)
 
 
 @stadium_router.put("/update/{stadium_id}", response_model=StadiumsRead)
 @sentry_capture_exceptions
-async def update_stadium(db: SessionDep, current_user: CurrentUser, stadium_id: int, schema: StadiumsUpdate):
+async def update_stadium(db: TransactionSessionDep, current_user: CurrentUser, stadium_id: int, schema: StadiumsUpdate):
     """
     Обновляет информацию о стадионе.
 
     **Параметры:**
     - `stadium_id` (int): Идентификатор стадиона, который необходимо обновить.
     - `schema` (StadiumsUpdate): Объект с данными для обновления стадиона
-    - `current_user` (CurrentUser): Текущий авторизованный пользователь. Обязательный параметр. Он будет проверен на права доступа (должен быть администратором или владельцем стадиона).
+    - `current_user` (CurrentUser): Текущий авторизованный пользователь. Обязательный параметр.
+    Он будет проверен на права доступа (должен быть администратором или владельцем стадиона).
     """
     return await stadium_service.update_stadium(db, schema=schema, stadium_id=stadium_id, user=current_user)
 
 
 @stadium_router.delete("/delete/{stadium_id}")
 @sentry_capture_exceptions
-async def delete_stadium(db: SessionDep, current_user: CurrentUser, stadium_id: int) -> Msg:
+async def delete_stadium(db: TransactionSessionDep, current_user: CurrentUser, stadium_id: int) -> Msg:
     """
     Удаляет стадион по указанному идентификатору.
 
@@ -50,36 +51,34 @@ async def delete_stadium(db: SessionDep, current_user: CurrentUser, stadium_id: 
 
 @stadium_router.patch('/start-verification/{stadium_id}', response_model=StadiumsRead)
 @sentry_capture_exceptions
-async def start_verification(stadium_id: int, db: SessionDep, user: CurrentUser):
+async def start_verification(stadium_id: int, db: TransactionSessionDep, user: CurrentUser):
     """
     Запускает процесс верификации стадиона, обновляя его статус на "Верификация".
-
-    **Параметры:**
-    - `stadium_id` (int): Идентификатор стадиона, который отправляется на верификацию.
-
-    **Ответ:**
-    - Возвращает обновленный объект стадиона с новым статусом верификации.
-
     """
     return await stadium_service.verify_stadium(
         db=db, schema=StadiumVerificationUpdate(status=StadiumStatus.VERIFICATION), stadium_id=stadium_id, user=user)
 
+
 @stadium_router.patch('/approve/{stadium_id}', response_model=StadiumsRead)
 @sentry_capture_exceptions
-async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdate, db: SessionDep, user: SuperUser):
+async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdate, db: TransactionSessionDep,
+                               user: SuperUser):
     """
     Ожидает одобрения верификации стадиона администратором и обновляет его статус на "Одобрен".
 
     **Параметры:**
     - `stadium_id` (int): Идентификатор стадиона, который будет одобрен.
-    - `schema` (StadiumVerificationUpdate): Обновленные данные для верификации стадиона, включая новый статус (например,"Added" - "Одобрен").
+    - `schema` (StadiumVerificationUpdate): Обновленные данные для верификации стадиона, включая новый статус
+    (например,"Added" - "Одобрен").
     Варианты статуса для админа: "Added", "Rejected", "Needs_revision"
     """
     return await stadium_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
 
+
 @stadium_router.put("/upload/{stadium_id}", response_model=dict)
 @sentry_capture_exceptions
-async def upload_image_stadium(db: SessionDep, stadium_id: int, user: CurrentUser, file: UploadFile = File()):
+async def upload_image_stadium(db: TransactionSessionDep, stadium_id: int, user: CurrentUser,
+                               file: UploadFile = File()):
     """
         Загружает изображение для стадиона.
 
@@ -98,8 +97,9 @@ async def get_stadiums(db: SessionDep):
 
 @stadium_router.get('/vendors-stadiums', response_model=PaginatedStadiumsResponse)
 @sentry_capture_exceptions
-async def get_vendor_stadiums(db: SessionDep, user: OwnerUser, page: int = Query(1, ge=1), size: int = Query(2, le=100)) -> PaginatedStadiumsResponse:
-   return  await stadium_service.get_vendor_stadiums(db, user, page, size)
+async def get_vendor_stadiums(db: SessionDep, user: OwnerUser, page: int = Query(1, ge=1),
+                              size: int = Query(2, le=100)) -> PaginatedStadiumsResponse:
+    return await stadium_service.get_vendor_stadiums(db, user, page, size)
 
 
 @stadium_router.get("/detail/{stadium_id}", response_model=StadiumsReadWithFacility)
@@ -117,10 +117,10 @@ async def detail_stadium(db: SessionDep, stadium_id: int):
     return await stadium_service.detail_stadium(db, stadium_id=stadium_id)
 
 
-
 @stadium_router.post("/services/{stadium_id}/")
 @sentry_capture_exceptions
-async def add_facility_to_stadium(db: SessionDep, stadium_id: int, schema: List[StadiumFacilityCreate], user: CurrentUser):
+async def add_facility_to_stadium(db: TransactionSessionDep, stadium_id: int, schema: List[StadiumFacilityCreate],
+                                  user: CurrentUser):
     """
     Добавляет услуги для указанного стадиона.
 
@@ -134,7 +134,7 @@ async def add_facility_to_stadium(db: SessionDep, stadium_id: int, schema: List[
 
 @stadium_router.delete("/delete-service", response_model=dict)
 @sentry_capture_exceptions
-async def stadium_delete_facility(db: SessionDep, schema: StadiumFacilityDelete, user: CurrentUser):
+async def stadium_delete_facility(db: TransactionSessionDep, schema: StadiumFacilityDelete, user: CurrentUser):
     """
     Удаляет услугу у стадиона.
 
@@ -149,11 +149,7 @@ async def stadium_delete_facility(db: SessionDep, schema: StadiumFacilityDelete,
     return await stadium_service.delete_facility_from_stadium(db, schema=schema, user=user)
 
 
-
-
 @stadium_router.get('/search', response_model=List[StadiumsRead])
 @sentry_capture_exceptions
 async def stadium_search(db: SessionDep, city: str, start_time: datetime, end_time: datetime):
     return await stadium_service.get_available_stadiums(db, city=city, start_time=start_time, end_time=end_time)
-
-
