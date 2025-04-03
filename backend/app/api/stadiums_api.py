@@ -16,6 +16,14 @@ stadium_router = APIRouter()
 @stadium_router.post("/create", response_model=StadiumsRead)
 @sentry_capture_exceptions
 async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, schema: StadiumsCreate):
+    """
+    Создание нового стадиона.
+
+    :param db: Сессия базы данных
+    :param current_user: Данные текущего пользователя (автоматически извлекаются из токена)
+    :param schema: Валидированные данные для создания стадиона
+    :return: Созданный стадион в формате StadiumsRead
+    """
     return await stadium_service.create_stadium(db, schema=schema, user=current_user)
 
 
@@ -23,13 +31,13 @@ async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
 @sentry_capture_exceptions
 async def update_stadium(db: TransactionSessionDep, current_user: CurrentUser, stadium_id: int, schema: StadiumsUpdate):
     """
-    Обновляет информацию о стадионе.
+    Обновление информации о стадионе.
 
-    **Параметры:**
-    - `stadium_id` (int): Идентификатор стадиона, который необходимо обновить.
-    - `schema` (StadiumsUpdate): Объект с данными для обновления стадиона
-    - `current_user` (CurrentUser): Текущий авторизованный пользователь. Обязательный параметр.
-    Он будет проверен на права доступа (должен быть администратором или владельцем стадиона).
+    :param db: Сессия базы данных
+    :param current_user: Данные текущего пользователя (должен быть администратором или владельцем)
+    :param stadium_id: Идентификатор стадиона для обновления
+    :param schema: Объект с данными для обновления
+    :return: Обновленный стадион в формате StadiumsRead
     """
     return await stadium_service.update_stadium(db, schema=schema, stadium_id=stadium_id, user=current_user)
 
@@ -38,13 +46,12 @@ async def update_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
 @sentry_capture_exceptions
 async def delete_stadium(db: TransactionSessionDep, current_user: CurrentUser, stadium_id: int) -> Msg:
     """
-    Удаляет стадион по указанному идентификатору.
+    Удаление стадиона по идентификатору.
 
-    **Параметры:**
-    - `stadium_id` (int): Идентификатор стадиона, который нужно удалить.
-    - `current_user` (CurrentUser): Текущий пользователь, который выполняет операцию.
-    **Ответ:**
-    - Возвращает сообщение о результате выполнения операции (успешно или ошибка).
+    :param db: Сессия базы данных
+    :param current_user: Данные текущего пользователя (должен быть администратором или владельцем)
+    :param stadium_id: Идентификатор стадиона для удаления
+    :return: Сообщение о результате операции
     """
     return await stadium_service.delete_stadium(db, stadium_id=stadium_id, user=current_user)
 
@@ -53,7 +60,12 @@ async def delete_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
 @sentry_capture_exceptions
 async def start_verification(stadium_id: int, db: TransactionSessionDep, user: CurrentUser):
     """
-    Запускает процесс верификации стадиона, обновляя его статус на "Верификация".
+    Запуск процесса верификации стадиона.
+
+    :param db: Сессия базы данных
+    :param user: Данные текущего пользователя
+    :param stadium_id: Идентификатор стадиона для верификации
+    :return: Стадион с обновленным статусом "Верификация"
     """
     return await stadium_service.verify_stadium(
         db=db, schema=StadiumVerificationUpdate(status=StadiumStatus.VERIFICATION), stadium_id=stadium_id, user=user)
@@ -64,13 +76,13 @@ async def start_verification(stadium_id: int, db: TransactionSessionDep, user: C
 async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdate, db: TransactionSessionDep,
                                user: SuperUser):
     """
-    Ожидает одобрения верификации стадиона администратором и обновляет его статус на "Одобрен".
+    Одобрение верификации стадиона администратором.
 
-    **Параметры:**
-    - `stadium_id` (int): Идентификатор стадиона, который будет одобрен.
-    - `schema` (StadiumVerificationUpdate): Обновленные данные для верификации стадиона, включая новый статус
-    (например,"Added" - "Одобрен").
-    Варианты статуса для админа: "Added", "Rejected", "Needs_revision"
+    :param db: Сессия базы данных
+    :param user: Данные администратора
+    :param stadium_id: Идентификатор стадиона для одобрения
+    :param schema: Данные для верификации (статус: "Added", "Rejected" или "Needs_revision")
+    :return: Стадион с обновленным статусом
     """
     return await stadium_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
 
@@ -80,11 +92,13 @@ async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdat
 async def upload_image_stadium(db: TransactionSessionDep, stadium_id: int, user: CurrentUser,
                                file: UploadFile = File()):
     """
-        Загружает изображение для стадиона.
+    Загрузка изображения для стадиона.
 
-        **Параметры:**
-        - `stadium_id` (int): Идентификатор стадиона, для которого загружается изображение.
-        - `file` (UploadFile): Изображение, которое нужно загрузить.
+    :param db: Сессия базы данных
+    :param user: Данные текущего пользователя
+    :param stadium_id: Идентификатор стадиона
+    :param file: Загружаемое изображение
+    :return: Результат операции в виде словаря
     """
     return await stadium_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
 
@@ -92,6 +106,12 @@ async def upload_image_stadium(db: TransactionSessionDep, stadium_id: int, user:
 @stadium_router.get('/all', response_model=List[StadiumsRead])
 @sentry_capture_exceptions
 async def get_stadiums(db: SessionDep):
+    """
+    Получение списка всех стадионов.
+
+    :param db: Сессия базы данных
+    :return: Список всех стадионов
+    """
     return await stadium_service.get_stadiums(db=db)
 
 
@@ -99,6 +119,20 @@ async def get_stadiums(db: SessionDep):
 @sentry_capture_exceptions
 async def get_vendor_stadiums(db: SessionDep, user: OwnerUser, page: int = Query(1, ge=1),
                               size: int = Query(2, le=100)) -> PaginatedStadiumsResponse:
+    """
+    Получение пагинированного списка стадионов, принадлежащих текущему владельцу (вендору).
+
+    :param db: Зависимость для работы с базой данных (сессия SQLAlchemy)
+    :param user: Авторизованный владелец стадионов (извлекается из токена)
+    :param page: Номер страницы (начиная с 1), по умолчанию 1
+    :param size: Количество элементов на странице (максимум 100), по умолчанию 2
+    :return: Объект PaginatedStadiumsResponse с пагинированным списком стадионов:
+             - items: List[Stadium] - список стадионов
+             - total: int - общее количество стадионов
+             - page: int - текущая страница
+             - size: int - количество элементов на странице
+             - pages: int - общее количество страниц
+    """
     return await stadium_service.get_vendor_stadiums(db, user, page, size)
 
 
@@ -106,14 +140,12 @@ async def get_vendor_stadiums(db: SessionDep, user: OwnerUser, page: int = Query
 @sentry_capture_exceptions
 async def detail_stadium(db: SessionDep, stadium_id: int):
     """
-        Получает информацию о стадионе и его услугах по идентификатору стадиона.
+    Получение подробной информации о стадионе.
 
-        **Параметры:**
-        - `stadium_id`: Идентификатор стадиона.
-
-        **Ответ:**
-        - Стадион с привязанными услугами, отзывами.
-        """
+    :param db: Сессия базы данных
+    :param stadium_id: Идентификатор стадиона
+    :return: Стадион с привязанными услугами и отзывами
+    """
     return await stadium_service.detail_stadium(db, stadium_id=stadium_id)
 
 
@@ -122,12 +154,13 @@ async def detail_stadium(db: SessionDep, stadium_id: int):
 async def add_facility_to_stadium(db: TransactionSessionDep, stadium_id: int, schema: List[StadiumFacilityCreate],
                                   user: CurrentUser):
     """
-    Добавляет услуги для указанного стадиона.
+    Добавление услуг для стадиона.
 
-        - `stadium_id` (int): ID стадиона, для которого добавляются услуги.
-        - `schema` (List[StadiumServiceCreate]): Список объектов, с id услуги, которые нужно добавить.
-        **Возвращает**:
-        - Список объектов `StadiumServiceRead`, где указаны добавленные услуги.
+    :param db: Сессия базы данных
+    :param user: Данные текущего пользователя
+    :param stadium_id: Идентификатор стадиона
+    :param schema: Список услуг для добавления
+    :return: Список добавленных услуг
     """
     return await stadium_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
 
@@ -136,15 +169,12 @@ async def add_facility_to_stadium(db: TransactionSessionDep, stadium_id: int, sc
 @sentry_capture_exceptions
 async def stadium_delete_facility(db: TransactionSessionDep, schema: StadiumFacilityDelete, user: CurrentUser):
     """
-    Удаляет услугу у стадиона.
+    Удаление услуги у стадиона.
 
-    **Параметры:**
-    - `schema` (StadiumServiceDelete): Схема, содержит информацию об id стадиона и id услуге, которую нужно удалить
-
-
-    **Ответ:**
-    - Возвращает результат операции в виде словаря с подтверждением выполнения удаления.
-
+    :param db: Сессия базы данных
+    :param user: Данные текущего пользователя
+    :param schema: Данные для удаления (идентификаторы стадиона и услуги)
+    :return: Результат операции в виде словаря
     """
     return await stadium_service.delete_facility_from_stadium(db, schema=schema, user=user)
 
@@ -152,4 +182,13 @@ async def stadium_delete_facility(db: TransactionSessionDep, schema: StadiumFaci
 @stadium_router.get('/search', response_model=List[StadiumsRead])
 @sentry_capture_exceptions
 async def stadium_search(db: SessionDep, city: str, start_time: datetime, end_time: datetime):
+    """
+    Поиск доступных стадионов по городу и временному интервалу.
+
+    :param db: Сессия базы данных
+    :param city: Город для поиска
+    :param start_time: Начало временного интервала
+    :param end_time: Конец временного интервала
+    :return: Список доступных стадионов
+    """
     return await stadium_service.get_available_stadiums(db, city=city, start_time=start_time, end_time=end_time)
