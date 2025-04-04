@@ -1,15 +1,9 @@
-import logging
-
 import pytest
 from datetime import timedelta
-
-from backend.app.repositories.stadiums_repositories import stadium_repo
 from backend.core import security
 from backend.core.config import settings
 
-# Настраиваем логгирование для тестов
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 
 new_load_data = {"name": "string", "slug": "donbasssss", "address": "string", "description": "string",
                  "additional_info": "string", "price": 1, "country": "string", "city": "string"}
@@ -22,25 +16,19 @@ class TestStadiumApi:
         (1, 200, None, new_load_data),
     ])
     async def test_create_stadium(self, db, client, user_id, status, detail, data):
-        stadiums = await stadium_repo.get_many(db=db)
-        for stadium in stadiums:
-            logger.info(f"Stadium: {stadium.id}")
         token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
         headers = {"Authorization": f"Bearer {str(token)}"}
         response = await client.post(f"{settings.API_V1_STR}/stadium/create", headers=headers, json=data)
-        after_stadiums = await stadium_repo.get_many(db=db)
-        for stadium1 in after_stadiums:
-            logger.info(f"after test  Stadium: {stadium1.id}")
         assert response.status_code == status
 
     @pytest.mark.parametrize("user_id,stadium_id, status, detail, data", [
-        (3, 1, 200, None, {"status": "added", "reason": None}),
+        (3, 1, 200, None, {"status": "Added", "reason": None}),
 
     ])
     async def test_verification_stadium(self, db, client, user_id, stadium_id, status, detail, data):
         token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
         headers = {"Authorization": f"Bearer {str(token)}"}
-        response = await client.patch(f"{settings.API_V1_STR}/stadium/verification/{stadium_id}", headers=headers,
+        response = await client.patch(f"{settings.API_V1_STR}/stadium/approve/{stadium_id}", headers=headers,
                                       json=data)
         assert response.status_code == status
 
@@ -72,9 +60,6 @@ class TestStadiumApi:
 
     ])
     async def test_delete_stadium(self,db,  client, stadium_id, user_id, status, detail):
-        stadiums = await stadium_repo.get_many(db=db)
-        for stadium in stadiums:
-            logger.info(f"Stadium: {stadium.id}")
         token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
         headers = {"Authorization": f"Bearer {str(token)}"}
         response = await client.delete(f"{settings.API_V1_STR}/stadium/delete/{stadium_id}", headers=headers)

@@ -3,23 +3,19 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 from unittest.mock import AsyncMock
-
 import pytest
-
 from httpx import AsyncClient, ASGITransport
-
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
 from sqlmodel import SQLModel
 
-from backend.app.dependencies.user_dep import redis_client
+from backend.app.dependencies.repositories import user_repo
+from backend.app.dependencies.services import redis_client, password_service
 from backend.app.models import User, Stadium, StadiumReview, Booking
 from backend.app.models.users import UserCreate
-
-
-from backend.tests.utils.utils import random_email, random_lower_string, random_username
+from backend.app.services.auth.password_service import PasswordService
+from backend.tests.utils.utils import random_email, random_lower_string
 
 os.environ["ENVIRONMENT"] = "test"
 from backend.main import app
@@ -59,6 +55,7 @@ def open_json(model: str):
 async def test_engine():
     """Асинхронный движок базы данных."""
     logger.info("Создание тестового движка базы данных.")
+    logger.info(f"{settings.database_url}")
     engine = create_async_engine(settings.database_url, echo=False)
     return engine
 
@@ -66,6 +63,7 @@ async def test_engine():
 @pytest.fixture(scope="session")
 async def create_tables(test_engine):
     logger.info("Удаление всех таблиц из тестовой базы данных.")
+
     async with test_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
@@ -73,12 +71,13 @@ async def create_tables(test_engine):
     logger.info("Создание таблиц в тестовой базе данных.")
     yield
     logger.info("Удаление таблиц из тестовой базы данных.")
+
     async with test_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
 
 
 @pytest.fixture(scope="session")
-async def db(test_engine, create_tables) -> AsyncSession:
+async def db(test_engine, create_tables) -> AsyncGenerator[AsyncSession, Any]:
     """Асинхронная сессия базы данных."""
     logger.info("Создание сессии базы данных для тестов.")
     async with AsyncSession(test_engine, expire_on_commit=False) as session:
@@ -132,7 +131,7 @@ async def prepare_data(db: AsyncSession):
 
 
 @pytest.fixture(scope="function")
-async def client() -> AsyncClient:
+async def client() -> AsyncGenerator[AsyncClient, Any]:
     """Асинхронный тестовый клиент для FastAPI."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
@@ -154,16 +153,8 @@ def mock_redis(monkeypatch):
     monkeypatch.setattr(redis_client, "delete_cache_by_prefix", async_mock.delete_cache_by_prefix)
 
 
-# @pytest.fixture()
-# async def create_user(db: AsyncSession):
-#     async def _create_user():
-#         email = random_email()
-#         password = random_lower_string()
-#         user_in = UserCreate(email=email, password=password)
-#         new_user = await user_repo.create(db=db, schema=user_in)
-#         return new_user, password
-#
-#     return _create_user
+
+
 #
 #
 # @pytest.fixture()

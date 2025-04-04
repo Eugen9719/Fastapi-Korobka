@@ -1,12 +1,10 @@
-from datetime import datetime
 
 import pytest
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from backend.app.dependencies.repositories import user_repo, booking_repo
 from backend.app.models.bookings import BookingCreate
-from backend.app.repositories.bookings_repositories import booking_repo
-from backend.app.repositories.user_repositories import user_repo
 
 
 
@@ -22,7 +20,7 @@ class TestCrudBooking:
     ])
     async def test_create_booking(self, db: AsyncSession, expected_exception, status_code, detail, user_id, start_time, end_time, stadium_id):
 
-        user = await user_repo.get_user_by_id(db=db, user_id=user_id)
+        user = await user_repo.get_or_404(db=db, id=user_id)
         create_schema = BookingCreate(
             start_time=start_time,
             end_time=end_time,
@@ -38,10 +36,10 @@ class TestCrudBooking:
             await booking_repo.create_booking(db=db, schema=create_schema, user=user)
 
     async def test_delete_booking(self, db: AsyncSession, ):
-        user = await user_repo.get_user_by_id(db=db, user_id=4)
-        response = await booking_repo.delete_booking(db, booking_id=3, user=user)
+        user = await user_repo.get_or_404(db=db, id=4)
+        response = await booking_repo.cancel_booking(db, booking_id=3, user=user)
         # Проверяем результат
-        assert response.msg == "booking deleted successfully"
+        assert response["msg"] == "Бронирование и связанные услуги успешно удалены"
 
         # Проверяем, что стадион больше не существует в базе
         with pytest.raises(HTTPException) as exc_info:

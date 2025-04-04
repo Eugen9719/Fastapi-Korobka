@@ -43,7 +43,7 @@ class User(UserBase, table=True):
 
 
 class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=40)
+    password: str = Field(min_length=8, max_length=100)
     status: StatusEnum = Field(default=StatusEnum.PLAYER)
 
 

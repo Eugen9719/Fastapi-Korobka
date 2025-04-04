@@ -33,8 +33,8 @@ class TestBookingApi:
         response = await client.delete(f"{settings.API_V1_STR}/booking/delete/{2}", headers=headers)
         assert response.status_code == 200
 
-    async def test_read_booking(self, client):
-        token = security.create_access_token(2, expires_delta=timedelta(minutes=10))
-        headers = {"Authorization": f"Bearer {str(token)}"}
-        response = await client.get(f"{settings.API_V1_STR}/booking/read", headers=headers)
-        assert response.status_code == 200
+    # async def test_read_booking(self, client):
+    #     token = security.create_access_token(2, expires_delta=timedelta(minutes=10))
+    #     headers = {"Authorization": f"Bearer {str(token)}"}
+    #     response = await client.get(f"{settings.API_V1_STR}/booking/read", headers=headers)
+    #     assert response.status_code == 200

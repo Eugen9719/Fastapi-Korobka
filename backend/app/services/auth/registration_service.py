@@ -20,14 +20,14 @@ class RegistrationService:
         self.pass_service = pass_service
 
     @HttpExceptionWrapper
-    async def register_user(self, new_user: UserCreate, db: AsyncSession):
-        existing_user = await self.user_repository.get_by_email(db, email=new_user.email)
+    async def register_user(self, schema: UserCreate, db: AsyncSession):
+        existing_user = await self.user_repository.get_by_email(db, email=schema.email)
         if existing_user:
             raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
-        hashed_password = self.pass_service.hash_password(new_user.password)
-        user = await self.user_repository.create_user(db, schema=new_user, hashed_password=hashed_password)
+        hashed_password = self.pass_service.hash_password(schema.password)
+        user = await self.user_repository.create_user(db, schema=schema, hashed_password=hashed_password)
         verify = await self.verif_repository.create(db, schema=VerificationCreate(user_id=user.id))
-        await self.email_service.send_verification_email(new_user.email, new_user.email, new_user.password, verify.link)
+        await self.email_service.send_verification_email(schema.email, schema.email, schema.password, verify.link)
         return {"msg": "Письмо с подтверждением отправлено"}
 
     @HttpExceptionWrapper

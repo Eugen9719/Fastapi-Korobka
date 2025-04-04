@@ -51,7 +51,7 @@ async def user_registration(new_user: UserCreate, db: TransactionSessionDep):
     :param new_user: Данные для регистрации нового пользователя
     :return: Сообщение об успешной регистрации
     """
-    return await registration_service.register_user(db=db, new_user=new_user)
+    return await registration_service.register_user(db=db, schema=new_user)
 
 
 @auth_router.post("/confirm_email", response_model=Msg)

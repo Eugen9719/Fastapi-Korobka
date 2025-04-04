@@ -1,27 +1,19 @@
-import logging
 
 import pytest
 from datetime import timedelta
-
 from httpx import AsyncClient
-from sqlmodel import Session, select
-from fastapi.testclient import TestClient
-
-from backend.app.models import User
+from sqlmodel import Session
 from backend.core import security
 from backend.core.config import settings
 
-# Настраиваем логгирование для тестов
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 
 @pytest.mark.run(order=2)
 @pytest.mark.anyio
 @pytest.mark.usefixtures("db", "client")
 class TestUserApi:
     async def test_get_user_me(self, db: Session, client: AsyncClient):
-        logger.info(f"Начало теста: {self.test_get_user_me.__name__}")
-        # Создание токена
+
         token = security.create_access_token(1, expires_delta=timedelta(minutes=10))
         headers = {"Authorization": f"Bearer {str(token)}"}
         response = await client.get(f"{settings.API_V1_STR}/user/me", headers=headers)
@@ -31,8 +23,7 @@ class TestUserApi:
         (1, 1, 200, None),
     ])
     async def test_get_user_by_id(self, db, client, user_id, r_user_id, status, detail):
-        logger.info(
-            f"Запуск теста {self.test_get_user_by_id.__name__} для: {user_id}")
+
         token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
         headers = {"Authorization": f"Bearer {str(token)}"}
 

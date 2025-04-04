@@ -6,7 +6,7 @@ from uuid import uuid4, UUID
 class Verification(SQLModel, table=True):
     """ Модель для подтверждения регистрации пользователя"""
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
-    link: UUID = Field(default_factory=uuid4, index=True)
+    link: str = Field(default_factory=lambda: str(uuid4()), index=True)
     user_id: int = Field(foreign_key="user.id")
 
 
@@ -20,7 +20,7 @@ class Msg(SQLModel):
 
 
 class VerificationOut(SQLModel):
-    link: UUID
+    link: str
 
 
 class VerificationCreate(SQLModel):

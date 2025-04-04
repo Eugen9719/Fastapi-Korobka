@@ -1,11 +1,13 @@
 from typing import Literal
+
+from pydantic import EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding='utf-8',
+        env_ignore_empty=True,
         extra="ignore",
     )
 
@@ -29,6 +31,7 @@ class Settings(BaseSettings):
 
     TEST_POSTGRES_DB: str = ""
 
+
     @property
     def database_url(self):
         if self.ENVIRONMENT == "test":
@@ -41,34 +44,31 @@ class Settings(BaseSettings):
             f"@db:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
-    SMTP_TLS: bool   # Настройка использования TLS для SMTP
-    SMTP_SSL: bool   # Настройка использования SSL для SMTP
-    SMTP_PORT: int   # Порт для SMTP сервера
-    SMTP_HOST: str   # Адрес SMTP сервера
-    SMTP_USER: str   # Пользователь SMTP
-    SMTP_PASSWORD: str   # Пароль SMTP
-    EMAILS_FROM_EMAIL: str  # Email отправителя
-    EMAILS_FROM_NAME: str | None = None  # Имя отправителя
+    SMTP_TLS: bool = True
+    SMTP_SSL: bool = False
+    SMTP_PORT: int = 587
+    SMTP_HOST: str | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    EMAILS_FROM_EMAIL: EmailStr | None = None
+    EMAILS_FROM_NAME: EmailStr | None = None
 
     EMAIL_TEMPLATE_DIR: str = 'backend/templates/build'
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48  # Время жизни токена для сброса пароля
 
+    STRIPE_PUBLISHABLE_KEY: str | None = None
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_WEBHOOK_SECRET: str | None = None
 
-    FIRST_SUPERUSER: str = ""
-    FIRST_SUPERUSER_PASSWORD: str = ""
+    SENTRY_DNS: str | None = None
 
-    STRIPE_PUBLISHABLE_KEY: str
-    STRIPE_SECRET_KEY: str
-    STRIPE_WEBHOOK_SECRET: str
-
-    SENTRY_DNS: str
-
-    CLOUD_NAME: str
-    CLOUD_API_KEY: str
-    CLOUD_API_SECRET: str
+    CLOUD_NAME: str | None = None
+    CLOUD_API_KEY: str | None = None
+    CLOUD_API_SECRET: str | None = None
 
     password_reset_jwt_subject: str = 'present'
 
 
 settings = Settings()
+print(settings.database_url)

@@ -9,14 +9,13 @@
     <div class="info-block">
         <!-- Колонка с изображением -->
         <div class="image-section">
-            <img src="/static/img/lublino-11.jpg" alt="Фото стадиона">
+            <img src="{{ stadium.image_url }}" alt="Фото стадиона" style="width: 580px; height: 520px">
         </div>
         <!-- Колонка с текстовой информацией -->
         <div class="text-section">
             <!-- Скрытый элемент, в котором хранится ID стадиона -->
             <div id="stadium-id" style="display: none;">{{stadium.id}}</div>
-
-            <h1>{{stadium.name}}</h1>
+            <h1>{{stadium.name}} </h1>
             <p>
                 Здесь будет подробное описание стадиона. Например, история строительства,
                 значимые события, которые здесь проходили, и другая интересная информация.
@@ -28,10 +27,34 @@
                 <li><strong>Адрес:</strong> ул. Спортивная, 10, Город, Страна</li>
                 <li><strong>Телефон:</strong> +7 (123) 456-78-90</li>
             </ul>
-            <div class="example">
-                gfhjgfj
+            <div class="container py-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        {% set free_services = [] %}
+                        {% for service in stadium.services %}
+                        {% if service.price == 0 %}
+                        {% set _ = free_services.append(service) %}
+                        {% endif %}
+                        {% endfor %}
+
+                        <h3 class="border-bottom pb-2 mb-3">Бесплатные услуги:</h3>
+                        <div class="row row-cols-1 row-cols-md-2 g-3">
+                            {% for service in free_services %}
+                            <div class="col">
+                                <div class="d-flex align-items-center p-3 bg-light rounded shadow-sm">
+                                    <img src="/static/img/svg/{{ service.svg_image }}" alt="SVG Image" class="me-3" width="32" height="32">
+                                    <span class="fs-6 text-muted">{{ service.name }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
+
+
         </div>
+
 
     </div>
 
@@ -117,6 +140,7 @@
     </div>
 
 </div>
-
-
+<script type="module" src="/static/js/details.js"></script>
+<script type="module" src="/static/js/config.js"></script>
+<script type="module" src="/static/js/base.js"></script>
 {%endblock %}
