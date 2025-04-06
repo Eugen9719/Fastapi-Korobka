@@ -63,7 +63,7 @@ async def upload_image(db: TransactionSessionDep, user: CurrentUser, file: Uploa
     :param file: Загружаемый файл изображения
     :return: Результат операции загрузки
     """
-    return await user_service.upload_image(db, file=file, model=user)
+    return await user_service.upload_image(db, file=file, current_user=user)
 
 
 @user_router.get("/all_user", response_model=List[UserPublic])
@@ -90,7 +90,7 @@ async def delete_user(user_id: int, db: TransactionSessionDep, user: CurrentUser
     :param user: Текущий авторизованный пользователь (администратор)
     :return: Сообщение о результате операции
     """
-    return await user_repo.delete_user(db=db, current_user=user, user_id=user_id)
+    return await user_service.delete_user(db=db, current_user=user, user_id=user_id)
 
 
 @user_router.get("/{user_id}", response_model=UserPublic)

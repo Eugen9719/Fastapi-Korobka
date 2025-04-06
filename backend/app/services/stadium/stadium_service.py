@@ -100,13 +100,10 @@ class StadiumService:
         self.permission.check_owner_or_admin(current_user=user, model=stadium)
         if stadium.status == StadiumStatus.VERIFICATION:
             raise HTTPException(status_code=400,
-                                detail="вы не можете изменить объект, пока у него статус 'На верификации")
-        was_active = stadium.is_active
+                                detail="вы не можете изменить объект, пока у него статус 'На верификации'")
+
         await self.stadium_repository.update(db=db, model=stadium, schema=schema.model_dump(exclude_unset=True))
         logger.info(f"Cтадион {stadium_id} отправлен на верификацию пользователем {user.id}")
-
-        if was_active and not stadium.is_active:
-            await self.redis.invalidate_cache("stadiums:all_active", f"Деактивация стадиона {stadium_id}")
         await self.redis.invalidate_cache(f"stadiums:vendor:{user.id}", f"Обновление стадиона {stadium_id}")
         return stadium
 
@@ -237,28 +234,27 @@ class StadiumService:
     async def add_facility_stadium(self, db: AsyncSession, stadium_id: int,
                                    facility_schema: List[StadiumFacilityCreate], user: User):
 
-        async with db.begin():  # Явная транзакция
-            stadium = await self.stadium_repository.get_or_404(db, id=stadium_id)
-            self.permission.check_owner_or_admin(user, stadium)
+        stadium = await self.stadium_repository.get_or_404(db, id=stadium_id)
+        self.permission.check_owner_or_admin(user, stadium)
 
-            added = 0
-            for facility in facility_schema:
-                if not await self.stadium_repository.service_exists(db, facility.facility_id):
-                    raise HTTPException(404, f"Сервис с ID {facility.facility_id} не найден")
+        added = 0
+        for facility in facility_schema:
+            if not await self.stadium_repository.service_exists(db, facility.facility_id):
+                raise HTTPException(404, f"Сервис с ID {facility.facility_id} не найден")
 
-                    # 2.2. Проверяем, что сервис еще не добавлен
-                if await self.stadium_repository.is_service_linked(db, stadium_id, facility.facility_id):
-                    continue
+                # 2.2. Проверяем, что сервис еще не добавлен
+            if await self.stadium_repository.is_service_linked(db, stadium_id, facility.facility_id):
+                continue
 
-                await self.stadium_repository.link_service_to_stadium(
-                    db, stadium_id, facility.facility_id
-                )
-                added += 1
+            await self.stadium_repository.link_service_to_stadium(
+                db, stadium_id, facility.facility_id
+            )
+            added += 1
 
-            if added == 0:
-                raise HTTPException(400, "Нет новых сервисов для добавления")
-            await self.redis.delete_cache_by_prefix("stadiums:")
-            return {f"message": f"Добавлено {added} сервисов"}
+        if added == 0:
+            raise HTTPException(400, "Нет новых сервисов для добавления")
+        await self.redis.delete_cache_by_prefix("stadiums:")
+        return {f"message": f"Добавлено {added} сервисов"}
 
     @HttpExceptionWrapper
     async def delete_facility_from_stadium(self, db: AsyncSession, schema: StadiumFacilityDelete, user: User) -> dict:

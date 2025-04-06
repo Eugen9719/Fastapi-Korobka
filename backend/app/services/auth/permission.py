@@ -16,26 +16,10 @@ class PermissionService:
             raise HTTPException(status_code=400, detail="У тебя нет прав удалять других пользователей")
 
     @staticmethod
-    def check_owner_or_admin(current_user, model: User) -> bool:
-            """
-            Проверяет, является ли пользователь администратором или создателем объекта.
-            """
-            if not current_user.is_superuser and model.user_id != current_user.id:
-                raise HTTPException(status_code=403, detail="Только админ или создатель могут проводить операции")
+    def check_owner_or_admin(current_user, model):
+        if current_user.id != model.user_id and not current_user.is_superuser:
+            raise HTTPException(status_code=403, detail="Только админ или создатель могут проводить операции")
 
-            # logger.info(f"Проверка пользователь id={current_user.id} на владельца или администратора успешна")
-            return True
-
-    @staticmethod
-    def check_current_user_or_admin(current_user, model: User) -> bool:
-            """
-            Проверяет, является ли пользователь администратором или создателем объекта.
-            """
-            if not current_user.is_superuser and model.id != current_user.id:
-                raise HTTPException(status_code=403, detail="Только админ или создатель могут проводить операции")
-
-            # logger.info(f"Проверка пользователь id={current_user.id} на владельца или администратора успешна")
-            return True
 
 
     @staticmethod
@@ -57,12 +41,13 @@ class PermissionService:
             )
 
     @staticmethod
-    def verify_owner(model: User) -> None:
+    def verify_owner(model: User) -> bool:
         """Проверяет права владельца"""
         if model.status != StatusEnum.OWNER:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Требуются права владельца"
             )
+        return True
 
 

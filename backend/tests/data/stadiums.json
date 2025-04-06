@@ -24,20 +24,22 @@
     "price": 300,
     "country": "Россия",
     "city": "Москва",
-    "user_id": 1
+    "user_id": 1,
+    "status": "ADDED"
   },
   {
     "name": "Открытие  Арена crud",
     "slug": "otkritiecrud",
     "address": "ул. Шевченко",
-    "is_active": true,
+    "is_active": false,
     "text": "string",
     "description": "string",
     "additional_info": "string",
     "price": 300,
     "country": "Россия",
     "city": "Москва",
-    "user_id": 1
+    "user_id": 1,
+    "status": "VERIFICATION"
   },
   {
     "name": "Стадион 1",
@@ -50,7 +52,8 @@
     "price": 300,
     "country": "Россия",
     "city": "Москва",
-    "user_id": 1
+    "user_id": 1,
+    "status": "DRAFT"
   },
   {
     "name": "Стадион 2",
@@ -63,6 +66,7 @@
     "price": 300,
     "country": "Россия",
     "city": "Москва",
-    "user_id": 1
+    "user_id": 1,
+    "status": "VERIFICATION"
   }
 ]

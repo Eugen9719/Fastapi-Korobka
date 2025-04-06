@@ -106,12 +106,9 @@ class AsyncBaseRepository(ICrudRepository[ModelType, CreateType, UpdateType]):
 
     async def get(self, db: AsyncSession, **kwargs) -> Optional[ModelType]:
         """Получение объекта по параметрам"""
-        try:
-            result = await db.execute(select(self.model).filter_by(**kwargs))
-            return result.scalar_one_or_none()
-        except SQLAlchemyError as e:
-            logger.error(f"Ошибка: {e}")
-            raise HTTPException(status_code=500, detail="Ошибка получения объекта")
+        result = await db.execute(select(self.model).filter_by(**kwargs))
+        return result.scalar_one_or_none()
+
 
     async def remove(self, db: AsyncSession, **kwargs) -> Tuple[bool, Optional[ModelType]]:
         """

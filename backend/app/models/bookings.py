@@ -31,7 +31,13 @@ class Booking(BookingBase, table=True):
     total_price: float = Field(nullable=True)
     user: Optional["User"] = Relationship(back_populates="bookings")
     stadium: Optional["Stadium"] = Relationship(back_populates="bookings")
-    booking_facility: List["BookingFacility"] = Relationship(back_populates="booking")
+
+    # Добавлено cascade="all, delete-orphan"
+    booking_facility: List["BookingFacility"] = Relationship(
+        back_populates="booking",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+
     status_note: str = Field(default="", nullable=True)  # Поле для пометки
 
     @property

@@ -24,6 +24,7 @@ sentry_sdk.init(
     ],
     traces_sample_rate=1.0,  # Включение трассировки (для производительности)
 )
+
 # Инициализация FastAPI
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -73,7 +74,7 @@ cloudinary.config(
 
 # Подключение маршрутов
 app.include_router(routers.api_router, prefix=settings.API_V1_STR)
-app = SentryAsgiMiddleware(app)
+
 
 
 

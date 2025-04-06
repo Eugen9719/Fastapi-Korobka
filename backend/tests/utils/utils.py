@@ -1,9 +1,14 @@
+import json
+import os
 import random
 import string
+from datetime import datetime, timedelta
 
-from fastapi.testclient import TestClient
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.core.config import settings
+from backend.app.models import User, Stadium, StadiumReview, Booking
+from backend.core import security
+from backend.core.security import get_password_hash
 
 
 def random_lower_string() -> str:
@@ -18,13 +23,49 @@ def random_email() -> str:
 
 
 
-# def get_superuser_token_headers(client: TestClient) -> dict[str, str]:
-#     login_data = {
-#         "username": settings.FIRST_SUPERUSER,
-#         "password": settings.FIRST_SUPERUSER_PASSWORD,
-#     }
-#     r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
-#     tokens = r.json()
-#     a_token = tokens["access_token"]
-#     headers = {"Authorization": f"Bearer {a_token}"}
-#     return headers
+def get_token_header(user_id:int):
+    token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
+    return {"Authorization": f"Bearer {str(token)}"}
+
+def open_json(model: str):
+    """Загрузка данных из JSON."""
+    file_path = os.path.join("backend/tests/data/", f"{model}.json")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Файл {file_path} не найден.")
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
+
+
+
+
+async def load_users(db: AsyncSession):
+    users = open_json("user")
+    for user_data in users:
+        user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
+        user = User(**user_data)
+        db.add(user)
+    await db.commit()
+
+
+async def load_stadiums(db: AsyncSession):
+    stadiums = open_json("stadiums")
+    for stadium_data in stadiums:
+        stadium = Stadium(**stadium_data)
+        db.add(stadium)
+    await db.commit()
+
+async def load_reviews(db: AsyncSession):
+    reviews = open_json("reviews")
+    for review_data in reviews:
+        review = StadiumReview(**review_data)
+        db.add(review)
+    await db.commit()
+
+async def load_bookings(db: AsyncSession):
+    bookings = open_json("bookings")
+    for booking_data in bookings:
+        booking_data["start_time"] = datetime.fromisoformat(booking_data["start_time"])
+        booking_data["end_time"] = datetime.fromisoformat(booking_data["end_time"])
+        booking = Booking(**booking_data)
+        db.add(booking)
+    await db.commit()

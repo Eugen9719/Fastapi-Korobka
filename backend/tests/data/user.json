@@ -1,5 +1,6 @@
 [
   {
+
     "email": "vendor@gmail.com",
     "password": "mars03051972",
     "first_name": "Евгений",
@@ -18,6 +19,7 @@
     "status": "OWNER"
   },
   {
+
     "email": "admin@gmail.com",
     "password": "mars03051972",
     "first_name": "superuser",
@@ -27,6 +29,7 @@
     "status": "OWNER"
   },
   {
+
     "email": "customer@gmail.com",
     "password": "mars03051972",
     "first_name": "customer",
@@ -45,7 +48,7 @@
     "is_superuser": false,
     "status": "PLAYER"
   },
-    {
+  {
 
     "email": "customer6@gmail.com",
     "password": "mars03051972",

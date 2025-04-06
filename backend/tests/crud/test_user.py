@@ -7,7 +7,9 @@ from fastapi import status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.dependencies.auth_dep import get_current_user
-from backend.app.dependencies.repositories import user_repo
+from backend.app.dependencies.repositories import user_repo, verify_repo
+from backend.app.dependencies.services import user_auth, user_service, registration_service, password_service, \
+    permission_service
 from backend.app.models.auth import VerificationOut, VerificationCreate
 from backend.app.models.users import UserUpdate, UpdatePassword, UserCreate, StatusEnum
 
@@ -17,12 +19,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.run(order=1)
+
 @pytest.mark.anyio
-@pytest.mark.usefixtures("db", "create_user", "create_superuser")
+@pytest.mark.usefixtures("db","test_data")
 class TestPermissions:
-    async def test_get_current_user(self, db, create_user) -> None:
-        user, _ = await create_user()
+    async def test_get_current_user(self, db,) -> None:
+        user = await user_repo.get_by_email(db, "vendor@gmail.com")
         token = security.create_access_token(user.id, expires_delta=timedelta(600))
         result_user = await get_current_user(db, token)
         assert result_user.id == user.id
@@ -47,44 +49,29 @@ class TestPermissions:
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == "Объект не найден"
 
-    # @pytest.mark.parametrize("user_id, is_vendor, expected_exception", [
-    #     (2, True, None),  # Пользователь с ролью "продавец", исключений быть не должно
-    #     (4, False, HTTPException),  # Пользователь не "продавец", должно быть исключение
-    # ])
-    # async def test_get_vendor_user(self, db, user_id, is_vendor, expected_exception):
-    #     token = security.create_access_token(user_id, expires_delta=timedelta(600))
-    #     current_user = await get_current_user(db, token)
-    #     # Тестирование функции get_vendor
-    #     if expected_exception:
-    #         with pytest.raises(expected_exception) as exc_info:
-    #              await get_owner(current_user)
-    #         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-    #         assert exc_info.value.detail == "This user is not an owner"
-    #     else:
-    #         result = await get_owner(current_user)
-    #         assert result.status == "OWNER"
+    @pytest.mark.parametrize("user_id, expected_exception", [
+        (2,None),  # Пользователь с ролью "продавец", исключений быть не должно
+        (4, HTTPException),  # Пользователь не "продавец", должно быть исключение
+    ])
+    async def test_get_vendor_user(self, db, user_id,  expected_exception):
 
-    # @pytest.mark.parametrize("user_id, is_superuser, expected_exception", [
-    #     (3, True, None),
-    #     (4, False, HTTPException),
-    # ])
-    # async def test_get_superuser(self, db, user_id, is_superuser, expected_exception):
-    #     logger.info(f"Начало теста: {self.test_get_superuser.__name__}")
-    #     token = security.create_access_token(user_id, expires_delta=timedelta(600))
-    #     current_user = await get_current_user(db, token)
-    #     # Тестирование функции get_vendor
-    #     if expected_exception:
-    #         with pytest.raises(expected_exception) as exc_info:
-    #             get_superuser(current_user)
-    #         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-    #         assert exc_info.value.detail == "The user doesn't have enough privileges"
-    #     else:
-    #         result = get_superuser(current_user)
-    #         assert result.is_superuser == True
+        current_user = await user_repo.get_or_404(db, id=user_id)
+        # Тестирование функции get_vendor
+        if expected_exception:
+            with pytest.raises(expected_exception) as exc_info:
+                  permission_service.verify_owner(current_user)
+            assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+            assert exc_info.value.detail == "Требуются права владельца"
+        else:
+            result =  permission_service.verify_owner(current_user)
+            assert result == True
 
 
-@pytest.mark.run(order=1)
+
+
+
 @pytest.mark.anyio
+@pytest.mark.usefixtures("db","test_data")
 class TestCrudUser:
 
     @pytest.mark.parametrize("email, password, expected_status", [
@@ -93,7 +80,7 @@ class TestCrudUser:
         ("vendor@gmail.com", "mars0305197sdaf2", None),  # Неверный пароль
     ])
     async def test_authenticate(self, db: AsyncSession, email, password, expected_status):
-        authenticated_user = await user_repo.authenticate(db, email=email, password=password)
+        authenticated_user = await user_auth.authenticate(db, email=email, password=password)
         # Проверяем результат
         if expected_status:
             assert authenticated_user is not None
@@ -115,11 +102,11 @@ class TestCrudUser:
 
         if expected_exception:
             with pytest.raises(expected_exception) as exc_info:
-                await user_repo.update_user(db=db, model=user, schema=update_schema)
+                await user_service.update_user(db=db, model=user, schema=update_schema)
             assert exc_info.value.status_code == status_code
             assert exc_info.value.detail == detail
         else:
-            await user_repo.update_user(db=db, model=user, schema=update_schema)
+            await user_service.update_user(db=db, model=user, schema=update_schema)
             updated_user = await user_repo.get_by_email(db=db, email=update_email)
 
             assert updated_user.email == update_email
@@ -138,40 +125,89 @@ class TestCrudUser:
         update_schema = UpdatePassword(current_password=current_password, new_password=hashed_password)
 
         if not expected_exception:
-            await user_repo.update_password(db=db, model=user, schema=update_schema)
+            await user_service.update_password(db=db, model=user, schema=update_schema)
 
         else:
             with pytest.raises(expected_exception) as exc_info:
-                await user_repo.update_password(db=db, model=user, schema=update_schema)
+                await user_service.update_password(db=db, model=user, schema=update_schema)
             assert exc_info.value.status_code == status_code
             assert exc_info.value.detail == detail
+
+    @pytest.mark.parametrize("email,expected_exception, status_code, detail", [
+        ("customer6nmhmg@gmail.com", HTTPException, 404, "Пользователя с этим email нет в системе"),
+        ("customer6@gmail.com", None, None, None),
+    ])
+    async def test_password_recovery(self, db: AsyncSession, email, expected_exception,
+                                   status_code, detail):
+        if not expected_exception:
+            response = await user_service.password_recovery(db=db, email=email)
+            assert response == {"msg": "Сброс пароля отправлен на email"}
+
+        else:
+            with pytest.raises(expected_exception) as exc_info:
+                await user_service.password_recovery(db=db, email=email)
+            assert exc_info.value.status_code == status_code
+            assert exc_info.value.detail == detail
+
+    @pytest.mark.parametrize("email,new_password,expected_exception, status_code, detail", [
+        ("", 'password', HTTPException, 400, "Невалидный токен"),
+        ("vendor1hgf@gmail.com", 'password', HTTPException, 404, "Пользователя с этим email нет в системе"),
+        ("vendor1@gmail.com",'password', None, None, None),
+    ])
+    async def test_password_reset(self, db: AsyncSession, email,new_password, expected_exception,
+                                     status_code, detail):
+        token = password_service.generate_password_reset_token(email)
+        if not expected_exception:
+            response = await user_service.password_reset(db=db, token=token, new_password=new_password)
+            assert response == {"msg": "Пароль успешно изменен"}
+
+        else:
+            with pytest.raises(expected_exception) as exc_info:
+                await user_service.password_reset(db=db, token=token, new_password=new_password)
+            assert exc_info.value.status_code == status_code
+            assert exc_info.value.detail == detail
+
+    """
+    if not email: 
+
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Невалидный токен") 
+        user = await self.user_repository.get_by_email(db, email=email) 
+        if not user: 
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+
+                                detail="Пользователя с этим email нет в системе") """
+
+
+
+
 
     @pytest.mark.parametrize("user_id, delete_user_id, expected_exception, status_code, detail", [
-        (6, 1, HTTPException, status.HTTP_400_BAD_REQUEST,
-         "у тебя нет прав удалять других пользователей"),
-        (3, 3, HTTPException, status.HTTP_400_BAD_REQUEST, "Админ не может удалить самого себя"),
-        (6, 6, None, None, None),
-    ])
+            (2, 1, HTTPException, 400,"У тебя нет прав удалять других пользователей"),
+            (3, 3, HTTPException, 400, "Админ не может удалить самого себя"),
+            (1, 1, None, None, None),
+        ])
     async def test_delete_user(self, db: AsyncSession, user_id, delete_user_id, expected_exception,
-                               status_code, detail):
-        user = await user_repo.get_or_404(db=db, id=user_id)
+                                   status_code, detail):
+            user = await user_repo.get_or_404(db=db, id=user_id)
 
-        if not expected_exception:
-            await user_repo.delete_user(db=db, user=user, user_id=user_id, )
-        else:
-            with pytest.raises(expected_exception) as exc_info:
-                await user_repo.delete_user(db=db, user=user, user_id=delete_user_id, )
-            assert exc_info.value.status_code == status_code
-            assert exc_info.value.detail == detail
+            if not expected_exception:
+                await user_service.delete_user(db=db, current_user=user, user_id=delete_user_id, )
+            else:
+                with pytest.raises(expected_exception) as exc_info:
+                    await user_service.delete_user(db=db, current_user=user, user_id=delete_user_id, )
+                assert exc_info.value.status_code == status_code
+                assert exc_info.value.detail == detail
 
 
-@pytest.mark.run(order=1)
+
+
 @pytest.mark.anyio
+@pytest.mark.usefixtures("db","test_data")
 class TestAuthService:
 
     @pytest.mark.parametrize("email, expected_exception, status_code, detail", [
         ("adminghfdh@gmail.com", None, None, None),
-        ("admin@gmail.com", HTTPException, 400, "Email уже зарегистрирован"),
+        ("adminghfdh@gmail.com", HTTPException, 400, "Email уже зарегистрирован"),
     ])
     async def test_registration_user(self, db: AsyncSession, email, expected_exception, status_code, detail):
         new_user = UserCreate(
@@ -185,11 +221,11 @@ class TestAuthService:
 
         if expected_exception:
             with pytest.raises(expected_exception) as exc_info:
-                await registration_user(db=db, new_user=new_user)
+                await registration_service.register_user(db=db, schema=new_user)
             assert exc_info.value.status_code == status_code
             assert exc_info.value.detail == detail
         else:
-            response = await registration_user(db=db, new_user=new_user)
+            response = await registration_service.register_user(db=db, schema=new_user)
             assert response == {"msg": "Письмо с подтверждением отправлено"}
 
     @pytest.mark.parametrize("expected_exception, status_code, detail", [
@@ -200,16 +236,17 @@ class TestAuthService:
         if expected_exception:
             with pytest.raises(expected_exception) as exc_info:
                 nonexistent_uuid = uuid.uuid4()
-                await verify_registration_user(VerificationOut(link=nonexistent_uuid), db)
+                await registration_service.verify_user(VerificationOut(link=str(nonexistent_uuid)) , db)
 
             assert exc_info.value.status_code == status_code
             assert exc_info.value.detail == detail
         else:
-            verification = await auth_repo.create(db, schema=VerificationCreate(user_id=5))
+
+            verification = await verify_repo.create(db, schema=VerificationCreate(user_id=5))
 
             # Выполняем верификацию
-            result = await verify_registration_user(VerificationOut(link=verification.link), db)
-            assert result == {'msg': 'Email successfully verified'}
+            result = await registration_service.verify_user(VerificationOut(link=verification.link), db)
+            assert result == {'msg': "Email успешно подтвержден"}
             updated_user = await user_repo.get(db, id=5)
             assert updated_user.is_active is True
 

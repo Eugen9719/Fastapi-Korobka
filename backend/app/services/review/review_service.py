@@ -35,15 +35,15 @@ class ReviewService:
     @HttpExceptionWrapper
     async def update_review(self, db: AsyncSession, schema: UpdateReview, review_id: int, user: User):
         review = await self.review_repository.get_or_404(db=db, id=review_id)
-        self.permission.check_current_user_or_admin(current_user=user, model=review)
-        review = self.review_repository.update_review(db=db, model=review, schema=schema)
+        self.permission.check_owner_or_admin(current_user=user, model=review)
+        review = await self.review_repository.update_review(db=db, model=review, schema=schema)
         logger.info(f"отзыв {review_id} успешно обновлен пользователем {user.id}")
         return review
 
     @HttpExceptionWrapper
     async def delete_review(self, db: AsyncSession, user: User, review_id: int):
         review = await self.review_repository.get_or_404(db=db, id=review_id)
-        self.permission.check_current_user_or_admin(current_user=user, model=review)
+        self.permission.check_owner_or_admin(current_user=user, model=review)
         await self.review_repository.delete_review(db=db, review_id=review.id)
         logger.info(f"отзыв {review_id} успешно удален пользователем {user.id}")
         return Msg(msg="отзыв успешно удален")

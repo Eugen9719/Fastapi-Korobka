@@ -1,28 +1,26 @@
 import asyncio
-import json
+
 import logging
 import os
-from datetime import datetime
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator, Any
 from unittest.mock import AsyncMock
+
 import pytest
+
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
+
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
 from sqlmodel import SQLModel
 
-from backend.app.dependencies.repositories import user_repo
-from backend.app.dependencies.services import redis_client, password_service
-from backend.app.models import User, Stadium, StadiumReview, Booking
-from backend.app.models.users import UserCreate
-from backend.app.services.auth.password_service import PasswordService
-from backend.tests.utils.utils import random_email, random_lower_string
-
-os.environ["ENVIRONMENT"] = "test"
-from backend.main import app
+from backend.app.dependencies.services import redis_client
+from backend.tests.utils.utils import load_users, load_stadiums, load_reviews, load_bookings
 
 from backend.core.config import settings
 
-from backend.core.security import get_password_hash
+os.environ["ENVIRONMENT"] = "test"
+from backend.main import app
 
 # Настраиваем логгирование для тестов
 logging.basicConfig(level=logging.INFO)
@@ -42,92 +40,85 @@ def event_loop():
     loop.close()
 
 
-def open_json(model: str):
-    """Загрузка данных из JSON."""
-    file_path = os.path.join("backend/tests/data/", f"{model}.json")
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Файл {file_path} не найден.")
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return json.load(file)
+
 
 
 @pytest.fixture(scope="session")
 async def test_engine():
-    """Асинхронный движок базы данных."""
-    logger.info("Создание тестового движка базы данных.")
-    logger.info(f"{settings.database_url}")
+    """Создание движка БД на сессию тестов"""
     engine = create_async_engine(settings.database_url, echo=False)
-    return engine
-
-
-@pytest.fixture(scope="session")
-async def create_tables(test_engine):
-    logger.info("Удаление всех таблиц из тестовой базы данных.")
-
-    async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
-        await conn.run_sync(SQLModel.metadata.create_all)
-    """Создание и удаление таблиц."""
-    logger.info("Создание таблиц в тестовой базе данных.")
-    yield
-    logger.info("Удаление таблиц из тестовой базы данных.")
-
-    async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
-
-
-@pytest.fixture(scope="session")
-async def db(test_engine, create_tables) -> AsyncGenerator[AsyncSession, Any]:
-    """Асинхронная сессия базы данных."""
-    logger.info("Создание сессии базы данных для тестов.")
-    async with AsyncSession(test_engine, expire_on_commit=False) as session:
-        yield session
+    yield engine
+    await engine.dispose()  # Важно: закрыть движок после завершения тестов.
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def prepare_data(db: AsyncSession):
-    """Подготовка данных перед тестами."""
-    for table in reversed(SQLModel.metadata.sorted_tables):
-        await db.execute(table.delete())
-    await db.commit()
+async def create_tables(test_engine):
+    """Создание таблиц перед тестами и удаление после"""
+    logger.info("Создание таблиц в тестовой базе данных.")
+    async with test_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    yield  # Тесты выполняются здесь
+    logger.info("Удаление таблиц из тестовой базы данных.")
+    async with test_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
 
-    users = open_json("user")
-    for user_data in users:
-        user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
-        user = User(**user_data)
-        db.add(user)
-    await db.commit()
-    logger.info(f"Загружено {len(users)} полей.")
 
-    stadiums = open_json("stadiums")
-    for stadium_data in stadiums:
-        stadium = Stadium(**stadium_data)
-        db.add(stadium)
+@pytest.fixture(scope="class")
+async def db(test_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Фикстура для тестовой сессии БД (изолированной на уровне теста)"""
+    async with AsyncSession(test_engine, expire_on_commit=False) as session:
+        try:
+            yield session
+        finally:
+            await session.rollback()
+            await session.close()  # Явное закрытие сессии
 
-    await db.commit()  # Подтверждение добавления стадионов
-    logger.info(f"Загружено {len(stadiums)} полей.")
 
-    # Загрузка отзывов
-    reviews = open_json("reviews")
-    for review_data in reviews:
-        review = StadiumReview(**review_data)
-        db.add(review)
+@pytest.fixture(scope="class")
+async def test_data(db: AsyncSession):
+    # Загрузка тестовых данных
+    logger.info("Загрузка тестовых данных")
+    try:
+        await load_users(db)
+        logger.info('Загружены тестовые данные пользователей')
+        await load_stadiums(db)
+        logger.info('Загружены тестовые данные стадионов')
+        await load_reviews(db)
+        logger.info('Загружены тестовые данные отзывов')
+        await load_bookings(db)
+        logger.info('Загружены тестовые данные бронирования')
 
-    await db.commit()  # Подтверждение добавления отзывов
-    logger.info(f"Загружено {len(reviews)} отзывов.")
 
-    # Загрузка бронирований
-    bookings = open_json("bookings")
-    for booking_data in bookings:
-        booking_data["start_time"] = datetime.fromisoformat(booking_data["start_time"])
-        booking_data["end_time"] = datetime.fromisoformat(booking_data["end_time"])
-        booking = Booking(**booking_data)
-        db.add(booking)
 
-    await db.commit()  # Подтверждение добавления бронирований
-    logger.info(f"Загружено {len(bookings)} бронирований.")
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Ошибка загрузки тестовых данных: {e}")
+        raise
 
     yield
+
+    logger.info("Очистка тестовых данных после модуля")
+    logger.info(f"Сброс sequence: ")
+    try:
+        # Удаляем все записи
+        for table in reversed(SQLModel.metadata.sorted_tables):
+            await db.execute(table.delete())
+
+        # Сбрасываем автоинкрементные последовательности
+        for table in SQLModel.metadata.sorted_tables:
+            table_name = table.name
+            sequence_name = f"{table_name}_id_seq"
+            try:
+                await db.execute(text(f'ALTER SEQUENCE "{sequence_name}" RESTART WITH 1'))
+
+            except Exception as e:
+                logger.warning(f"Не удалось сбросить sequence {sequence_name}: {e}")
+
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Ошибка при очистке тестовых данных: {e}")
+
 
 
 @pytest.fixture(scope="function")
@@ -140,28 +131,17 @@ async def client() -> AsyncGenerator[AsyncClient, Any]:
 @pytest.fixture(autouse=True)
 def mock_redis(monkeypatch):
     async_mock = AsyncMock()
-
-    # Мокаем методы работы с кешем
-    async_mock.fetch_cached_data.return_value = None  # Чтобы кеш всегда был пустым
-    async_mock.cache_data.return_value = None  # Заглушка вместо реального кеширования
+    async_mock.fetch_cached_data.return_value = None
+    async_mock.cache_data.return_value = None
     async_mock.delete_cache_by_prefix.return_value = None
+    async_mock.invalidate_cache = AsyncMock(return_value=None)
 
-    # Подменяем реальный объект redis_client
     monkeypatch.setattr(redis_client, "get_client", AsyncMock(return_value=async_mock))
     monkeypatch.setattr(redis_client, "fetch_cached_data", async_mock.fetch_cached_data)
     monkeypatch.setattr(redis_client, "cache_data", async_mock.cache_data)
     monkeypatch.setattr(redis_client, "delete_cache_by_prefix", async_mock.delete_cache_by_prefix)
+    monkeypatch.setattr(redis_client, "invalidate_cache", async_mock.invalidate_cache)
+
+    return async_mock  # Возвращаем мок для проверок
 
 
-
-
-#
-#
-# @pytest.fixture()
-# async def create_superuser(create_user, db: AsyncSession):
-#     user, _ = await create_user()
-#     user.is_superuser = True
-#     db.add(user)
-#     await db.commit()
-#     await db.refresh(user)
-#     return user, _

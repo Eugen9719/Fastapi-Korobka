@@ -195,6 +195,6 @@ class BookingService:
         if not booking.status == StatusBooking.PENDING:
             raise HTTPException(status_code=400, detail="Удалять бронирования можно только со статусом 'Pending'")
 
-        self.permission.check_current_user_or_admin(current_user=user, model=booking)
+        self.permission.check_owner_or_admin(current_user=user, model=booking)
         await self.booking_repository.cancel_booking(db, existing_booking=booking)
         return {"msg": "Бронирование и связанные услуги успешно удалены"}

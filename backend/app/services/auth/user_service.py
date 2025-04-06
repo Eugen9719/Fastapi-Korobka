@@ -71,10 +71,10 @@ class UserService:
         return {"msg": "Пароль успешно изменен"}
 
     @HttpExceptionWrapper
-    async def upload_image(self, db: AsyncSession, model: User, file: UploadFile = File(...)) -> dict:
+    async def upload_image(self, db: AsyncSession, current_user: User, file: UploadFile = File(...)) -> dict:
         """Загрузка изображения для пользователя."""
-        user = await self.user_repository.get_or_404(db, id=model.id)
-        self.permission.check_current_user_or_admin(current_user=user, model=model)
+        user = await self.user_repository.get_or_404(db, id=current_user.id)
+        self.permission.check_owner_or_admin(current_user=current_user, model=user)
         await self.image_handler.delete_old_image(db, user)
         return await self.image_handler.upload_image(db, user, file)
 

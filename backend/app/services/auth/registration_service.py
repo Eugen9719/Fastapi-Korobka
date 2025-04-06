@@ -32,7 +32,7 @@ class RegistrationService:
 
     @HttpExceptionWrapper
     async def verify_user(self, uuid: VerificationOut, db: AsyncSession):
-        verify = await self.verif_repository.get(db, link=uuid.link)
+        verify = await self.verif_repository.get(db, link=str(uuid.link))
         if not verify:
             raise HTTPException(status_code=404, detail="Verification failed")
 

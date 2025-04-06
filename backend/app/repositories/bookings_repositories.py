@@ -56,9 +56,6 @@ class BookingRepository(AsyncBaseRepository[Booking, BookingCreate, BookingUpdat
                 detail=f"Booking creation failed: {str(e)}"
             )
 
-
-
-
     async def get_booking_from_date(self, db: AsyncSession, stadium_id: int, selected_date: date):
         result = await db.execute(
             select(self.model).where(
@@ -72,5 +69,5 @@ class BookingRepository(AsyncBaseRepository[Booking, BookingCreate, BookingUpdat
     async def cancel_booking(db: AsyncSession, existing_booking: Booking):
         await db.execute(delete(BookingFacility).where(BookingFacility.booking_id == existing_booking.id))
         # Удаляем само бронирование
-        await db.delete(booking)
+        await db.delete(existing_booking)
         await db.commit()

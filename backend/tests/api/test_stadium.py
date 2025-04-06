@@ -1,23 +1,19 @@
 import pytest
-from datetime import timedelta
-from backend.core import security
 from backend.core.config import settings
-
-
+from backend.tests.utils.utils import get_token_header
 
 new_load_data = {"name": "string", "slug": "donbasssss", "address": "string", "description": "string",
                  "additional_info": "string", "price": 1, "country": "string", "city": "string"}
 
-@pytest.mark.run(order=2)
+
 @pytest.mark.anyio
-@pytest.mark.usefixtures("db", "client")
+@pytest.mark.usefixtures("db", "client", "test_data")
 class TestStadiumApi:
     @pytest.mark.parametrize("user_id,status, detail, data", [
         (1, 200, None, new_load_data),
     ])
     async def test_create_stadium(self, db, client, user_id, status, detail, data):
-        token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
-        headers = {"Authorization": f"Bearer {str(token)}"}
+        headers = get_token_header(user_id)
         response = await client.post(f"{settings.API_V1_STR}/stadium/create", headers=headers, json=data)
         assert response.status_code == status
 
@@ -26,8 +22,7 @@ class TestStadiumApi:
 
     ])
     async def test_verification_stadium(self, db, client, user_id, stadium_id, status, detail, data):
-        token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
-        headers = {"Authorization": f"Bearer {str(token)}"}
+        headers = get_token_header(user_id)
         response = await client.patch(f"{settings.API_V1_STR}/stadium/approve/{stadium_id}", headers=headers,
                                       json=data)
         assert response.status_code == status
@@ -38,8 +33,7 @@ class TestStadiumApi:
 
     ])
     async def test_update_stadium(self, db, client, user_id, stadium_id, status, detail, data):
-        token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
-        headers = {"Authorization": f"Bearer {str(token)}"}
+        headers = get_token_header(user_id)
         response = await client.put(f"{settings.API_V1_STR}/stadium/update/{stadium_id}", headers=headers, json=data)
         assert response.status_code == status
 
@@ -60,7 +54,6 @@ class TestStadiumApi:
 
     ])
     async def test_delete_stadium(self,db,  client, stadium_id, user_id, status, detail):
-        token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
-        headers = {"Authorization": f"Bearer {str(token)}"}
+        headers = get_token_header(user_id)
         response = await client.delete(f"{settings.API_V1_STR}/stadium/delete/{stadium_id}", headers=headers)
         assert response.status_code == status
