@@ -3,8 +3,7 @@ import pytest
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.dependencies.repositories import user_repo, booking_repo
-from backend.app.dependencies.services import booking_service
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.bookings import BookingCreate
 
 
@@ -22,7 +21,7 @@ class TestCrudBooking:
     ])
     async def test_create_booking(self, db: AsyncSession, expected_exception, status_code, detail, user_id, start_time, end_time, stadium_id):
 
-        user = await user_repo.get_or_404(db=db, id=user_id)
+        user = await service_factory.user_repo.get_or_404(db=db, id=user_id)
         create_schema = BookingCreate(
             start_time=start_time,
             end_time=end_time,
@@ -31,19 +30,19 @@ class TestCrudBooking:
 
         if expected_exception:
             with pytest.raises(expected_exception) as exc_info:
-                await booking_service.create_booking(db=db, schema=create_schema, user=user)
+                await service_factory.booking_service.create_booking(db=db, schema=create_schema, user=user)
             assert exc_info.value.status_code == status_code
             assert exc_info.value.detail == detail["detail"]
         else:
-            await booking_service.create_booking(db=db, schema=create_schema, user=user)
+            await service_factory.booking_service.create_booking(db=db, schema=create_schema, user=user)
 
     async def test_delete_booking(self, db: AsyncSession, ):
-        user = await user_repo.get_or_404(db=db, id=4)
-        response = await booking_service.delete_booking(db, booking_id=3, user=user)
+        user = await service_factory.user_repo.get_or_404(db=db, id=4)
+        response = await service_factory.booking_service.delete_booking(db, booking_id=3, user=user)
         # Проверяем результат
         assert response["msg"] == "Бронирование и связанные услуги успешно удалены"
 
         # Проверяем, что стадион больше не существует в базе
         with pytest.raises(HTTPException) as exc_info:
-            await booking_repo.get_or_404(db=db, id=3)
+            await service_factory.booking_repo.get_or_404(db=db, id=3)
         assert exc_info.value.status_code == 404

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Query
 from backend.app.dependencies.auth_dep import CurrentUser, SuperUser, OwnerUser
-from backend.app.dependencies.services import stadium_service
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.additional_facility import StadiumFacilityDelete
 from backend.app.models.auth import Msg
 from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, StadiumsCreate, \
@@ -24,7 +24,7 @@ async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     :param schema: Валидированные данные для создания стадиона
     :return: Созданный стадион в формате StadiumsRead
     """
-    return await stadium_service.create_stadium(db, schema=schema, user=current_user)
+    return await service_factory.stadium_service.create_stadium(db, schema=schema, user=current_user)
 
 
 @stadium_router.put("/update/{stadium_id}", response_model=StadiumsRead)
@@ -39,7 +39,7 @@ async def update_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     :param schema: Объект с данными для обновления
     :return: Обновленный стадион в формате StadiumsRead
     """
-    return await stadium_service.update_stadium(db, schema=schema, stadium_id=stadium_id, user=current_user)
+    return await service_factory.stadium_service.update_stadium(db, schema=schema, stadium_id=stadium_id, user=current_user)
 
 
 @stadium_router.delete("/delete/{stadium_id}")
@@ -53,7 +53,7 @@ async def delete_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     :param stadium_id: Идентификатор стадиона для удаления
     :return: Сообщение о результате операции
     """
-    return await stadium_service.delete_stadium(db, stadium_id=stadium_id, user=current_user)
+    return await service_factory.stadium_service.delete_stadium(db, stadium_id=stadium_id, user=current_user)
 
 
 @stadium_router.patch('/start-verification/{stadium_id}', response_model=StadiumsRead)
@@ -67,7 +67,7 @@ async def start_verification(stadium_id: int, db: TransactionSessionDep, user: C
     :param stadium_id: Идентификатор стадиона для верификации
     :return: Стадион с обновленным статусом "Верификация"
     """
-    return await stadium_service.verify_stadium(
+    return await service_factory.stadium_service.verify_stadium(
         db=db, schema=StadiumVerificationUpdate(status=StadiumStatus.VERIFICATION), stadium_id=stadium_id, user=user)
 
 
@@ -84,7 +84,7 @@ async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdat
     :param schema: Данные для верификации (статус: "Added", "Rejected" или "Needs_revision")
     :return: Стадион с обновленным статусом
     """
-    return await stadium_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
+    return await service_factory.stadium_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
 
 
 @stadium_router.put("/upload/{stadium_id}", response_model=dict)
@@ -100,7 +100,7 @@ async def upload_image_stadium(db: TransactionSessionDep, stadium_id: int, user:
     :param file: Загружаемое изображение
     :return: Результат операции в виде словаря
     """
-    return await stadium_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
+    return await service_factory.stadium_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
 
 
 @stadium_router.get('/all', response_model=List[StadiumsRead])
@@ -112,7 +112,7 @@ async def get_stadiums(db: SessionDep):
     :param db: Сессия базы данных
     :return: Список всех стадионов
     """
-    return await stadium_service.get_stadiums(db=db)
+    return await service_factory.stadium_service.get_stadiums(db=db)
 
 
 @stadium_router.get('/vendors-stadiums', response_model=PaginatedStadiumsResponse)
@@ -133,7 +133,7 @@ async def get_vendor_stadiums(db: SessionDep, user: OwnerUser, page: int = Query
              - size: int - количество элементов на странице
              - pages: int - общее количество страниц
     """
-    return await stadium_service.get_vendor_stadiums(db, user, page, size)
+    return await service_factory.stadium_service.get_vendor_stadiums(db, user, page, size)
 
 
 @stadium_router.get("/detail/{stadium_id}", response_model=StadiumsReadWithFacility)
@@ -146,7 +146,7 @@ async def detail_stadium(db: SessionDep, stadium_id: int):
     :param stadium_id: Идентификатор стадиона
     :return: Стадион с привязанными услугами и отзывами
     """
-    return await stadium_service.detail_stadium(db, stadium_id=stadium_id)
+    return await service_factory.stadium_service.detail_stadium(db, stadium_id=stadium_id)
 
 
 @stadium_router.post("/services/{stadium_id}/")
@@ -162,7 +162,7 @@ async def add_facility_to_stadium(db: TransactionSessionDep, stadium_id: int, sc
     :param schema: Список услуг для добавления
     :return: Список добавленных услуг
     """
-    return await stadium_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
+    return await service_factory.stadium_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
 
 
 @stadium_router.delete("/delete-service", response_model=dict)
@@ -176,7 +176,7 @@ async def stadium_delete_facility(db: TransactionSessionDep, schema: StadiumFaci
     :param schema: Данные для удаления (идентификаторы стадиона и услуги)
     :return: Результат операции в виде словаря
     """
-    return await stadium_service.delete_facility_from_stadium(db, schema=schema, user=user)
+    return await service_factory.stadium_service.delete_facility_from_stadium(db, schema=schema, user=user)
 
 
 @stadium_router.get('/search', response_model=List[StadiumsRead])
@@ -191,4 +191,4 @@ async def stadium_search(db: SessionDep, city: str, start_time: datetime, end_ti
     :param end_time: Конец временного интервала
     :return: Список доступных стадионов
     """
-    return await stadium_service.get_available_stadiums(db, city=city, start_time=start_time, end_time=end_time)
+    return await service_factory.stadium_service.get_available_stadiums(db, city=city, start_time=start_time, end_time=end_time)

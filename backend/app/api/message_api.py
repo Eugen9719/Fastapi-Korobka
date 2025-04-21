@@ -4,7 +4,7 @@ from typing import List, Dict
 from fastapi import APIRouter
 
 from backend.app.dependencies.auth_dep import CurrentUser
-from backend.app.dependencies.repositories import message_repo
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.chat import MessageRead, MessageCreate
 from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
@@ -18,7 +18,7 @@ message_router = APIRouter()
 @message_router.get("/messages/{user_id}", response_model=List[MessageRead])
 @sentry_capture_exceptions
 async def get_messages(db: SessionDep, user_id: int, current_user: CurrentUser):
-    return await message_repo.get_messages_between_users(db=db, user_id_1=user_id, user_id_2=current_user.id) or []
+    return await service_factory.message_repo.get_messages_between_users(db=db, user_id_1=user_id, user_id_2=current_user.id) or []
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @sentry_capture_exceptions
 async def send_message(db: TransactionSessionDep, schema: MessageCreate, current_user: CurrentUser):
     # Создаем сообщение
-    message = await message_repo.create(db=db, schema=schema, sender_id=current_user.id)
+    message = await service_factory.message_repo.create(db=db, schema=schema, sender_id=current_user.id)
 
     # Подготовка данных для уведомления
     message_data = {

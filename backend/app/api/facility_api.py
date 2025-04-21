@@ -3,7 +3,7 @@ from typing import Any, List
 from fastapi import APIRouter
 
 from backend.app.dependencies.auth_dep import CurrentUser
-from backend.app.dependencies.services import facility_service
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.additional_facility import FacilityRead, FacilityCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import  TransactionSessionDep
@@ -22,4 +22,4 @@ async def create_facility(db: TransactionSessionDep, schema: List[FacilityCreate
     :param user: Текущий авторизованный пользователь
     :return: Список созданных услуг в формате FacilityRead
     """
-    return await facility_service.create_facility(db, schema=schema, user=user)
+    return await service_factory.facility_service.create_facility(db, schema=schema, user=user)

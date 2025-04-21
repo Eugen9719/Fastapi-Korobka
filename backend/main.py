@@ -5,10 +5,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from backend.app import routers
-from backend.app.dependencies.services import redis_client
+from backend.app.dependencies.service_factory import service_factory
 
 from backend.core.config import settings
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 
@@ -37,11 +36,11 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup():
-    await redis_client.connect()
+    await service_factory.redis_client.connect()
 
 @app.on_event("shutdown")
 async def shutdown():
-    await redis_client.disconnect()
+    await service_factory.redis_client.disconnect()
 
 # Подключение статики
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -70,6 +69,14 @@ cloudinary.config(
     api_secret=settings.CLOUD_API_SECRET,
     secure=True
 )
+
+
+
+
+
+
+
+
 
 
 # Подключение маршрутов

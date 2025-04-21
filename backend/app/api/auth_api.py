@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.dependencies.services import user_auth, permission_service, registration_service, user_service
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import Token, Msg, VerificationOut
 from backend.app.models.users import UserCreate
 from backend.app.services.decorators import sentry_capture_exceptions
@@ -26,12 +26,12 @@ async def login_access_token(db: SessionDep, form_data: Annotated[OAuth2Password
     :return: Объект Token с access_token и типом bearer
     :raises HTTPException: 400 если email или пароль неверные
     """
-    user = await user_auth.authenticate(
+    user = await service_factory.user_auth.authenticate(
         db=db, email=form_data.username, password=form_data.password
     )
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
-    permission_service.verify_active(user)
+    service_factory.permission_service.verify_active(user)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
@@ -51,7 +51,7 @@ async def user_registration(new_user: UserCreate, db: TransactionSessionDep):
     :param new_user: Данные для регистрации нового пользователя
     :return: Сообщение об успешной регистрации
     """
-    return await registration_service.register_user(db=db, schema=new_user)
+    return await service_factory.registration_service.register_user(db=db, schema=new_user)
 
 
 @auth_router.post("/confirm_email", response_model=Msg)
@@ -64,7 +64,7 @@ async def confirm_email(uuid: VerificationOut, db: TransactionSessionDep):
     :param uuid: Объект с verification token
     :return: Сообщение об успешном подтверждении email
     """
-    return await registration_service.verify_user(db=db, uuid=uuid)
+    return await service_factory.registration_service.verify_user(db=db, uuid=uuid)
 
 
 @auth_router.post("/password-recovery/{email}", response_model=Msg)
@@ -77,7 +77,7 @@ async def recover_password(email: str, db: SessionDep):
     :param email: Email для восстановления пароля
     :return: Сообщение о результате операции
     """
-    return await user_service.password_recovery(db, email)
+    return await service_factory.user_service.password_recovery(db, email)
 
 
 @auth_router.post("/reset_password", response_model=Msg)
@@ -91,4 +91,4 @@ async def reset_password(db: TransactionSessionDep, token: str = Body(...), new_
     :param new_password: Новый пароль пользователя
     :return: Сообщение об успешном изменении пароля
     """
-    return await user_service.password_reset(db, token, new_password)
+    return await service_factory.user_service.password_reset(db, token, new_password)

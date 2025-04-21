@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import PyJWTError
 from fastapi import Depends, HTTPException, status
 
-from backend.app.dependencies.repositories import user_repo
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import TokenPayload
 from backend.app.models.users import User
 from backend.app.services.auth.permission import PermissionService
@@ -34,7 +34,7 @@ async def get_current_user(db: SessionDep, token: TokenDep) -> User:
         token_data = TokenPayload(**payload)
     except PyJWTError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Could not validate credentials")
-    user = await user_repo.get_or_404(db=db, id=token_data.sub)
+    user = await service_factory.user_repo.get_or_404(db=db, id=token_data.sub)
     return user
 
 

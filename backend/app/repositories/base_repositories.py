@@ -4,9 +4,9 @@ from typing import Optional, Sequence, Tuple, Any
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
-from backend.app.abstractions.repository import IQueryRepository, ModelType, ICrudRepository, CreateType, UpdateType
+
+from backend.app.interface.ibase_repo import ModelType, IQueryRepository, ICrudRepository, CreateType, UpdateType
 
 logger = logging.getLogger(__name__)
 

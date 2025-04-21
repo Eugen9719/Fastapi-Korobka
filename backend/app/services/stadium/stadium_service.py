@@ -5,10 +5,10 @@ from typing import List
 import sentry_sdk
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import selectinload
-from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from backend.app.abstractions.storage import ImageHandler
+from backend.app.interface.istadium_repo import IStadiumRepository
 from backend.app.models import User
 from backend.app.models.additional_facility import StadiumFacilityDelete
 
@@ -16,8 +16,8 @@ from backend.app.models.auth import Msg
 from backend.app.models.base_model_public import AdditionalFacilityReadBase
 
 from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumsCreate, StadiumsUpdate, \
-    StadiumsRead, PaginatedStadiumsResponse, Stadium, StadiumReview, StadiumsReadWithFacility, StadiumFacilityCreate
-from backend.app.repositories.stadiums_repositories import StadiumRepository
+    StadiumsRead, Stadium, StadiumReview, StadiumsReadWithFacility, StadiumFacilityCreate
+
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.redis import RedisClient
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class StadiumService:
     """Сервис управления пользователями"""
 
-    def __init__(self, stadium_repository: StadiumRepository, permission: PermissionService, redis: RedisClient,
+    def __init__(self, stadium_repository: IStadiumRepository, permission: PermissionService, redis: RedisClient,
                  image_handler: ImageHandler,
                  ):
         self.stadium_repository = stadium_repository
@@ -40,12 +40,11 @@ class StadiumService:
     async def create_stadium(self, db: AsyncSession, schema: StadiumsCreate, user: User):
         """Создание стадиона с корректной обработкой дубликатов"""
 
-        async with db.begin_nested():
-            if not await self.stadium_repository.is_slug_unique(db, schema.slug):
-                logger.info(f"Слаг используется: {schema.slug} пользователем {user.id}")  # INFO вместо WARNING
-                raise HTTPException(status_code=400, detail="Слаг уже используется")
+        if not await self.stadium_repository.is_slug_unique(db, schema.slug):
+            logger.info(f"Слаг используется: {schema.slug} пользователем {user.id}")  # INFO вместо WARNING
+            raise HTTPException(status_code=400, detail="Слаг уже используется")
 
-        return await self.stadium_repository.create_stadium(db, schema, user.id)
+        return await self.stadium_repository.create(db=db, schema=schema, user_id=user.id)
 
     @HttpExceptionWrapper
     async def update_stadium(self, db: AsyncSession, schema: StadiumsUpdate, stadium_id: int, user: User):
@@ -66,7 +65,7 @@ class StadiumService:
             raise HTTPException(status_code=400, detail="Слаг уже используется")
 
         was_active = stadium.is_active
-        stadium = await self.stadium_repository.update_stadium(db=db, model=stadium, schema=schema)
+        stadium = await self.stadium_repository.update(db=db, model=stadium, schema=schema)
         logger.info(f"Стадион {stadium_id} обновлен пользователем {user.id}", )
 
         if was_active and not stadium.is_active:
@@ -85,7 +84,7 @@ class StadiumService:
         self.permission.check_owner_or_admin(current_user=user, model=stadium)
 
         was_active = stadium.is_active
-        await self.stadium_repository.delete_stadium(db=db, stadium_id=stadium.id)
+        await self.stadium_repository.remove(db=db, id=stadium.id)
         if was_active:
             await self.redis.invalidate_cache("stadiums:all_active", f"Удаление стадиона {stadium_id}")
         logger.info(f"Стадион {stadium_id} удален пользователем {user.id}")
@@ -174,31 +173,31 @@ class StadiumService:
         # Возвращаем данные в формате, ожидаемом в response_model
         return [StadiumsRead(**stadium.model_dump()) for stadium in stadiums]
 
-    @HttpExceptionWrapper
-    async def get_vendor_stadiums(self, db: AsyncSession, user: User, page: int,
-                                  size: int) -> PaginatedStadiumsResponse:
-        # Кеш для стадионов вендора с пагинацией
-        cache_key = f"stadiums:vendor:{user.id}:page{page}:size{size}"
-
-        # Пытаемся получить данные из кеша
-        cached_data = await self.redis.fetch_cached_data(cache_key=cache_key, schema=Stadium)
-        if cached_data:
-            return PaginatedStadiumsResponse(**cached_data)
-
-        # Если данных нет в кеше, получаем их из базы данных
-        query = select(Stadium).where(Stadium.user_id == user.id)
-        paginated_data = await self.stadium_repository.paginate(query, db, page, size)
-
-        # Подготавливаем данные для кеширования
-        json_data = {
-            "items": [stadium.model_dump() for stadium in paginated_data["items"]],
-            "page": paginated_data["page"],
-            "pages": paginated_data["pages"]
-        }
-        await self.redis.cache_data(cache_key, json_data)
-
-        # Возвращаем данные в формате, ожидаемом в response_model
-        return PaginatedStadiumsResponse(**paginated_data)
+    # @HttpExceptionWrapper
+    # async def get_vendor_stadiums(self, db: AsyncSession, user: User, page: int,
+    #                               size: int) -> PaginatedStadiumsResponse:
+    #     # Кеш для стадионов вендора с пагинацией
+    #     cache_key = f"stadiums:vendor:{user.id}:page{page}:size{size}"
+    #
+    #     # Пытаемся получить данные из кеша
+    #     cached_data = await self.redis.fetch_cached_data(cache_key=cache_key, schema=Stadium)
+    #     if cached_data:
+    #         return PaginatedStadiumsResponse(**cached_data)
+    #
+    #     # Если данных нет в кеше, получаем их из базы данных
+    #     query = select(Stadium).where(Stadium.user_id == user.id)
+    #     paginated_data = await self.stadium_repository.paginate(query, db, page, size)
+    #
+    #     # Подготавливаем данные для кеширования
+    #     json_data = {
+    #         "items": [stadium.model_dump() for stadium in paginated_data["items"]],
+    #         "page": paginated_data["page"],
+    #         "pages": paginated_data["pages"]
+    #     }
+    #     await self.redis.cache_data(cache_key, json_data)
+    #
+    #     # Возвращаем данные в формате, ожидаемом в response_model
+    #     return PaginatedStadiumsResponse(**paginated_data)
 
     @HttpExceptionWrapper
     async def detail_stadium(self, db: AsyncSession, stadium_id: int):

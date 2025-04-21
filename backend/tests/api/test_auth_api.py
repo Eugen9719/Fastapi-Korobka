@@ -4,8 +4,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
-from backend.app.dependencies.repositories import verify_repo, user_repo
-from backend.app.dependencies.services import password_service
+
+from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import VerificationCreate
 from backend.app.models.users import UserCreate
 from backend.core.config import settings
@@ -53,13 +53,13 @@ class TestAuthUser:
     async def test_confirm_email_success(self, db: AsyncSession, client: AsyncClient) -> None:
         email = random_email()
         password = random_lower_string()
-        user = await user_repo.create(
+        user = await service_factory.user_repo.create(
             db,
             schema=UserCreate(email=email, password=password),
-            hashed_password=password_service.hash_password(password)
+            hashed_password=service_factory.password_service.hash_password(password)
         )
 
-        verification = await verify_repo.create(db, schema=VerificationCreate(user_id=user.id))
+        verification = await service_factory.verify_repo.create(db, schema=VerificationCreate(user_id=user.id))
         await db.commit()
         await db.refresh(verification)
 
@@ -98,7 +98,7 @@ class TestAuthUser:
         email = "customer@gmail.com"
         password = "Mars03051972"
         # Создаем токен для теста
-        password_reset_token = password_service.generate_password_reset_token(email)
+        password_reset_token = service_factory.password_service.generate_password_reset_token(email)
 
         # Эмуляция запроса на изменение пароля
         response = await client.post(

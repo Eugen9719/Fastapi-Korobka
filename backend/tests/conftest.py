@@ -9,12 +9,10 @@ import pytest
 
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text
-
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
 from sqlmodel import SQLModel
 
-from backend.app.dependencies.services import redis_client
+from backend.app.dependencies.service_factory import service_factory
 from backend.tests.utils.utils import load_users, load_stadiums, load_reviews, load_bookings
 
 from backend.core.config import settings
@@ -127,7 +125,7 @@ async def client() -> AsyncGenerator[AsyncClient, Any]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
 
-
+redis = service_factory.redis_client
 @pytest.fixture(autouse=True)
 def mock_redis(monkeypatch):
     async_mock = AsyncMock()
@@ -136,11 +134,11 @@ def mock_redis(monkeypatch):
     async_mock.delete_cache_by_prefix.return_value = None
     async_mock.invalidate_cache = AsyncMock(return_value=None)
 
-    monkeypatch.setattr(redis_client, "get_client", AsyncMock(return_value=async_mock))
-    monkeypatch.setattr(redis_client, "fetch_cached_data", async_mock.fetch_cached_data)
-    monkeypatch.setattr(redis_client, "cache_data", async_mock.cache_data)
-    monkeypatch.setattr(redis_client, "delete_cache_by_prefix", async_mock.delete_cache_by_prefix)
-    monkeypatch.setattr(redis_client, "invalidate_cache", async_mock.invalidate_cache)
+    monkeypatch.setattr(redis, "get_client", AsyncMock(return_value=async_mock))
+    monkeypatch.setattr(redis, "fetch_cached_data", async_mock.fetch_cached_data)
+    monkeypatch.setattr(redis, "cache_data", async_mock.cache_data)
+    monkeypatch.setattr(redis, "delete_cache_by_prefix", async_mock.delete_cache_by_prefix)
+    monkeypatch.setattr(redis, "invalidate_cache", async_mock.invalidate_cache)
 
     return async_mock  # Возвращаем мок для проверок
 

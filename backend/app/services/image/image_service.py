@@ -4,8 +4,9 @@ import cloudinary.uploader
 from fastapi import UploadFile, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.abstractions.repository import ModelType
+
 from backend.app.abstractions.storage import ImageHandler
+from backend.app.interface.ibase_repo import ModelType
 
 logger = logging.getLogger(__name__)
 class CloudinaryImageHandler(ImageHandler):

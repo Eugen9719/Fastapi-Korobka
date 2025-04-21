@@ -9,6 +9,18 @@ CreateType = TypeVar("CreateType", bound=SQLModel)
 UpdateType = TypeVar("UpdateType", bound=SQLModel)
 
 
+
+
+class IQueryRepository(ABC, Generic[ModelType]):
+    @abstractmethod
+    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None):
+        pass
+    @abstractmethod
+    async def get_many(self, db: AsyncSession, **kwargs) -> Sequence[ModelType]:
+        pass
+
+
+
 # Интерфейс для базовых операций с репозиторием
 class ICrudRepository(ABC, Generic[ModelType, CreateType, UpdateType]):
     @abstractmethod
@@ -22,12 +34,4 @@ class ICrudRepository(ABC, Generic[ModelType, CreateType, UpdateType]):
         pass
     @abstractmethod
     async def remove(self, db: AsyncSession, **kwargs) -> Tuple[bool, Optional[ModelType]]:
-        pass
-
-class IQueryRepository(ABC, Generic[ModelType]):
-    @abstractmethod
-    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None):
-        pass
-    @abstractmethod
-    async def get_many(self, db: AsyncSession, **kwargs) -> Sequence[ModelType]:
         pass
