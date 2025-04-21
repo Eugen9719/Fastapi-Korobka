@@ -7,8 +7,8 @@ from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.abstractions.storage import ImageHandler
-from backend.app.interface.istadium_repo import IStadiumRepository
+from backend.app.interface.utils.i_image_handler import ImageHandler
+from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from backend.app.models import User
 from backend.app.models.additional_facility import StadiumFacilityDelete
 

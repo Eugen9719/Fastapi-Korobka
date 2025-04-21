@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.abstractions.services import IPasswordService
+from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.app.models.auth import VerificationCreate, VerificationOut
 from backend.app.models.users import UserCreate, UserUpdateActive
 from backend.app.repositories.user_repositories import UserRepository

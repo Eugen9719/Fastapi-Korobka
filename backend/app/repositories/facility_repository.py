@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.interface.ibase_repo import CreateType, ModelType
+from backend.app.interface.base.i_base_repo import CreateType, ModelType
 from backend.app.models.additional_facility import AdditionalFacility, FacilityCreate, FacilityUpdate
 from backend.app.repositories.base_repositories import AsyncBaseRepository, QueryMixin
 

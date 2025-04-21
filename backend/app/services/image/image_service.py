@@ -3,10 +3,8 @@ import logging
 import cloudinary.uploader
 from fastapi import UploadFile, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-
-
-from backend.app.abstractions.storage import ImageHandler
-from backend.app.interface.ibase_repo import ModelType
+from backend.app.interface.base.i_base_repo import ModelType
+from backend.app.interface.utils.i_image_handler import ImageHandler
 
 logger = logging.getLogger(__name__)
 class CloudinaryImageHandler(ImageHandler):

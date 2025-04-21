@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.interface.ibase_repo import ModelType
+from backend.app.interface.base.i_base_repo import ModelType
 
 
 # Интерфейс для работы с изображениями

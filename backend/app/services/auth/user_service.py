@@ -2,8 +2,7 @@ from fastapi import HTTPException, UploadFile, File
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
-from backend.app.abstractions.storage import ImageHandler
-
+from backend.app.interface.utils.i_image_handler import ImageHandler
 from backend.app.models import User
 from backend.app.models.auth import Msg
 from backend.app.models.users import UpdatePassword, UserUpdate

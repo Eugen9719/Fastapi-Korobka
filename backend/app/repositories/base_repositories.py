@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
 
-from backend.app.interface.ibase_repo import ModelType, IQueryRepository, ICrudRepository, CreateType, UpdateType
+from backend.app.interface.base.i_base_repo import ModelType, IQueryRepository, ICrudRepository, CreateType, UpdateType
 
 logger = logging.getLogger(__name__)
 

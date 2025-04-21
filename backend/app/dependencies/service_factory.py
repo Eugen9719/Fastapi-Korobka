@@ -73,6 +73,8 @@ class ServiceFactory:
     def redis_client(self) -> RedisClient:
         return self._redis_client
 
+
+
     # --- Repository Access ---
     @property
     def user_repo(self) -> UserRepository:
@@ -93,6 +95,12 @@ class ServiceFactory:
     @property
     def review_repo(self) -> ReviewRepository:
         return self._review_repo
+
+    @property
+    def message_repo(self) -> MessageRepositories:
+        return self._message_repo
+
+
 
     # --- Business Services ---
     @property
@@ -169,10 +177,8 @@ class ServiceFactory:
             )
         return self._user_service
 
-    # Для MessageRepositories, если нужен сервис
-    @property
-    def message_repo(self) -> MessageRepositories:
-        return self._message_repo
+
+
 
 
 service_factory = ServiceFactory()

@@ -1,11 +1,8 @@
 from datetime import timedelta, datetime
 from typing import Optional
-
 import jwt
 
-from backend.app.abstractions.services import IPasswordService
-
-
+from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.core.config import settings
 
 

@@ -5,7 +5,7 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from .base_repositories import AsyncBaseRepository, QueryMixin
-from ..interface.istadium_repo import IStadiumRepository
+from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from ..models import AdditionalFacility, Booking
 from ..models.additional_facility import StadiumFacilityDelete
 from ..models.stadiums import StadiumsCreate, Stadium, StadiumsUpdate, StadiumFacility
