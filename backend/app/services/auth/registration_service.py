@@ -1,11 +1,11 @@
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from backend.app.interface.repositories.i_user_repo import IUserRepository
+from backend.app.interface.repositories.i_verification_repo import IVerifyRepository
 from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.app.models.auth import VerificationCreate, VerificationOut
 from backend.app.models.users import UserCreate, UserUpdateActive
-from backend.app.repositories.user_repositories import UserRepository
-from backend.app.repositories.verification_repository import VerifyRepository
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.email.email_service import EmailService
 
@@ -13,7 +13,7 @@ from backend.app.services.email.email_service import EmailService
 class RegistrationService:
     """Сервис регистрации пользователей"""
 
-    def __init__(self, user_repository: UserRepository, verif_repository: VerifyRepository, email_service: EmailService, pass_service: IPasswordService,):
+    def __init__(self, user_repository: IUserRepository, verif_repository: IVerifyRepository, email_service: EmailService, pass_service: IPasswordService,):
         self.user_repository = user_repository
         self.verif_repository = verif_repository
         self.email_service = email_service
@@ -25,7 +25,7 @@ class RegistrationService:
         if existing_user:
             raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
         hashed_password = self.pass_service.hash_password(schema.password)
-        user = await self.user_repository.create_user(db, schema=schema, hashed_password=hashed_password)
+        user = await self.user_repository.create(db, schema=schema, hashed_password=hashed_password)
         verify = await self.verif_repository.create(db, schema=VerificationCreate(user_id=user.id))
         await self.email_service.send_verification_email(schema.email, schema.email, schema.password, verify.link)
         return {"msg": "Письмо с подтверждением отправлено"}

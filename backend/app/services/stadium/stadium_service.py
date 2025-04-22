@@ -5,6 +5,7 @@ from typing import List
 import sentry_sdk
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import selectinload
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from backend.app.interface.utils.i_image_handler import ImageHandler
@@ -16,7 +17,7 @@ from backend.app.models.auth import Msg
 from backend.app.models.base_model_public import AdditionalFacilityReadBase
 
 from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumsCreate, StadiumsUpdate, \
-    StadiumsRead, Stadium, StadiumReview, StadiumsReadWithFacility, StadiumFacilityCreate
+    StadiumsRead, Stadium, StadiumReview, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse
 
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
@@ -173,31 +174,31 @@ class StadiumService:
         # Возвращаем данные в формате, ожидаемом в response_model
         return [StadiumsRead(**stadium.model_dump()) for stadium in stadiums]
 
-    # @HttpExceptionWrapper
-    # async def get_vendor_stadiums(self, db: AsyncSession, user: User, page: int,
-    #                               size: int) -> PaginatedStadiumsResponse:
-    #     # Кеш для стадионов вендора с пагинацией
-    #     cache_key = f"stadiums:vendor:{user.id}:page{page}:size{size}"
-    #
-    #     # Пытаемся получить данные из кеша
-    #     cached_data = await self.redis.fetch_cached_data(cache_key=cache_key, schema=Stadium)
-    #     if cached_data:
-    #         return PaginatedStadiumsResponse(**cached_data)
-    #
-    #     # Если данных нет в кеше, получаем их из базы данных
-    #     query = select(Stadium).where(Stadium.user_id == user.id)
-    #     paginated_data = await self.stadium_repository.paginate(query, db, page, size)
-    #
-    #     # Подготавливаем данные для кеширования
-    #     json_data = {
-    #         "items": [stadium.model_dump() for stadium in paginated_data["items"]],
-    #         "page": paginated_data["page"],
-    #         "pages": paginated_data["pages"]
-    #     }
-    #     await self.redis.cache_data(cache_key, json_data)
-    #
-    #     # Возвращаем данные в формате, ожидаемом в response_model
-    #     return PaginatedStadiumsResponse(**paginated_data)
+    @HttpExceptionWrapper
+    async def get_vendor_stadiums(self, db: AsyncSession, user: User, page: int,
+                                  size: int) -> PaginatedStadiumsResponse:
+        # Кеш для стадионов вендора с пагинацией
+        cache_key = f"stadiums:vendor:{user.id}:page{page}:size{size}"
+
+        # Пытаемся получить данные из кеша
+        cached_data = await self.redis.fetch_cached_data(cache_key=cache_key, schema=Stadium)
+        if cached_data:
+            return PaginatedStadiumsResponse(**cached_data)
+
+        # Если данных нет в кеше, получаем их из базы данных
+        query = select(Stadium).where(Stadium.user_id == user.id)
+        paginated_data = await self.stadium_repository.paginate(query, db, page, size)
+
+        # Подготавливаем данные для кеширования
+        json_data = {
+            "items": [stadium.model_dump() for stadium in paginated_data["items"]],
+            "page": paginated_data["page"],
+            "pages": paginated_data["pages"]
+        }
+        await self.redis.cache_data(cache_key, json_data)
+
+        # Возвращаем данные в формате, ожидаемом в response_model
+        return PaginatedStadiumsResponse(**paginated_data)
 
     @HttpExceptionWrapper
     async def detail_stadium(self, db: AsyncSession, stadium_id: int):

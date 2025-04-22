@@ -6,12 +6,15 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from backend.app.interface.base.i_base_repo import CreateType, ModelType
+from backend.app.interface.repositories.i_facility_repo import IFacilityRepository
 from backend.app.models.additional_facility import AdditionalFacility, FacilityCreate, FacilityUpdate
 from backend.app.repositories.base_repositories import AsyncBaseRepository, QueryMixin
 
 logger = logging.getLogger(__name__)
 
-class FacilityRepository(AsyncBaseRepository[AdditionalFacility, FacilityCreate, FacilityUpdate], QueryMixin):
+
+class FacilityRepository(IFacilityRepository, AsyncBaseRepository[AdditionalFacility, FacilityCreate, FacilityUpdate],
+                         QueryMixin):
     def __init__(self):
         super().__init__(AdditionalFacility)
 
@@ -36,11 +39,8 @@ class FacilityRepository(AsyncBaseRepository[AdditionalFacility, FacilityCreate,
                 detail="Failed to create multiple objects"
             )
 
-    @staticmethod
-    async def get_facility( db: AsyncSession, facility_id: int) -> Optional[AdditionalFacility]:
+    async def get_facility(self, db: AsyncSession, facility_id: int) -> Optional[AdditionalFacility]:
         result = await db.execute(
             select(AdditionalFacility).where(AdditionalFacility.id == facility_id)
         )
         return result.scalar_one_or_none()
-
-

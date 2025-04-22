@@ -6,13 +6,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
 
-from backend.app.interface.base.i_base_repo import ModelType, IQueryRepository, ICrudRepository, CreateType, UpdateType
+from backend.app.interface.base.i_base_repo import (
+    ModelType,
+    ICrudRepository,
+    CreateType,
+    UpdateType,
+    IReadRepository,
+    IFilterRepository,
+    IPaginateRepository
+)
 
 logger = logging.getLogger(__name__)
 
 
 # Миксин для дополнительных операций
-class QueryMixin(IQueryRepository[ModelType]):
+class QueryMixin(
+    IReadRepository[ModelType],
+    IFilterRepository[ModelType],
+    IPaginateRepository[ModelType]
+):
     def __init__(self, model: type[ModelType]):
         self.model = model
 
@@ -57,8 +69,7 @@ class QueryMixin(IQueryRepository[ModelType]):
         result = await db.execute(query)
         return result.scalars().all()
 
-    @staticmethod
-    async def paginate(query, db: AsyncSession, page: int, size: int):
+    async def paginate(self, query, db: AsyncSession, page: int, size: int):
         offset = (page - 1) * size
 
         # Подсчет количества записей
@@ -83,8 +94,7 @@ class AsyncBaseRepository(ICrudRepository[ModelType, CreateType, UpdateType]):
     def __init__(self, model: type[ModelType]):
         self.model = model
 
-    @staticmethod
-    async def save_db(db: AsyncSession, db_obj: ModelType) -> ModelType:
+    async def save_db(self, db: AsyncSession, db_obj: ModelType) -> ModelType:
         """Сохраняет объект в базе данных"""
         merged_obj = await db.merge(db_obj)
         await db.flush()
@@ -108,7 +118,6 @@ class AsyncBaseRepository(ICrudRepository[ModelType, CreateType, UpdateType]):
         """Получение объекта по параметрам"""
         result = await db.execute(select(self.model).filter_by(**kwargs))
         return result.scalar_one_or_none()
-
 
     async def remove(self, db: AsyncSession, **kwargs) -> Tuple[bool, Optional[ModelType]]:
         """

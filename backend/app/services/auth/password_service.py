@@ -16,8 +16,7 @@ class PasswordService(IPasswordService):
         from backend.core.security import verify_password
         return verify_password(plain, hashed)
 
-    @staticmethod
-    def generate_password_reset_token(email: str):
+    def generate_password_reset_token(self, email: str):
 
         delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
         now = datetime.now()
@@ -25,18 +24,18 @@ class PasswordService(IPasswordService):
         exp = expires.timestamp()
         encoded_jwt = jwt.encode(
             {
-            "exp": exp,
-            "nbf": now.timestamp(),
-            "sub": settings.password_reset_jwt_subject,
-            "email": email
+                "exp": exp,
+                "nbf": now.timestamp(),
+                "sub": settings.password_reset_jwt_subject,
+                "email": email
             },
             settings.SECRET_KEY,
             algorithm=settings.ALGORITHM
         )
         return encoded_jwt
 
-    @staticmethod
-    def verify_password_reset_token(token: str) -> Optional[str]:
+
+    def verify_password_reset_token(self, token: str) -> Optional[str]:
         try:
             decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             print("Decoded token:", decoded_token)  # Выводим содержимое токена

@@ -11,14 +11,27 @@ UpdateType = TypeVar("UpdateType", bound=SQLModel)
 
 
 
-class IQueryRepository(ABC, Generic[ModelType]):
+# Базовый доступ (по id и по фильтрам)
+class IReadRepository(ABC, Generic[ModelType]):
     @abstractmethod
-    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None):
+    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None) -> ModelType:
         pass
+
     @abstractmethod
     async def get_many(self, db: AsyncSession, **kwargs) -> Sequence[ModelType]:
         pass
 
+# Расширенная фильтрация
+class IFilterRepository(ABC, Generic[ModelType]):
+    @abstractmethod
+    async def base_filter(self, db: AsyncSession, *filters, options=None) -> Sequence[ModelType]:
+        pass
+
+# Пагинация
+class IPaginateRepository(ABC, Generic[ModelType]):
+    @abstractmethod
+    async def paginate(self, query, db: AsyncSession, page: int, size: int) -> dict:
+        pass
 
 
 # Интерфейс для базовых операций с репозиторием
@@ -34,4 +47,8 @@ class ICrudRepository(ABC, Generic[ModelType, CreateType, UpdateType]):
         pass
     @abstractmethod
     async def remove(self, db: AsyncSession, **kwargs) -> Tuple[bool, Optional[ModelType]]:
+        pass
+
+    @abstractmethod
+    async def save_db(self, db: AsyncSession, db_obj: ModelType) -> ModelType:
         pass

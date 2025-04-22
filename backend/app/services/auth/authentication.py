@@ -1,16 +1,16 @@
 from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from backend.app.interface.repositories.i_user_repo import IUserRepository
 from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.app.models import User
-from backend.app.repositories.user_repositories import UserRepository
 from backend.app.services.decorators import HttpExceptionWrapper
 
 
 class UserAuthentication:
     """Сервис аутентификации пользователей"""
 
-    def __init__(self, pass_service: IPasswordService, user_repository: UserRepository):
+    def __init__(self, pass_service: IPasswordService, user_repository: IUserRepository):
         self.pass_service = pass_service
         self.user_repository = user_repository
 

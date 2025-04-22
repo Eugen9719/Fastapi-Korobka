@@ -8,11 +8,12 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from backend.app.interface.repositories.i_booking_repo import IBookingRepository
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from backend.app.models import User, Stadium
 from backend.app.models.bookings import BookingCreate, StatusBooking, Booking, BookingFacility, \
     PaginatedBookingsResponse
-from backend.app.repositories.bookings_repositories import BookingRepository
+
 from backend.app.repositories.facility_repository import FacilityRepository
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
@@ -21,7 +22,7 @@ from backend.app.services.decorators import HttpExceptionWrapper
 class BookingService:
     """Сервис управления бронированием"""
 
-    def __init__(self, booking_repository: BookingRepository, stadium_repository: IStadiumRepository,
+    def __init__(self, booking_repository: IBookingRepository, stadium_repository: IStadiumRepository,
                  facility_repository: FacilityRepository,
                  permission: PermissionService):
         self.booking_repository = booking_repository

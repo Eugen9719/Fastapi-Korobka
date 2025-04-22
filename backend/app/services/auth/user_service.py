@@ -2,21 +2,21 @@ from fastapi import HTTPException, UploadFile, File
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
+from backend.app.interface.repositories.i_user_repo import IUserRepository
 from backend.app.interface.utils.i_image_handler import ImageHandler
+from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.app.models import User
 from backend.app.models.auth import Msg
 from backend.app.models.users import UpdatePassword, UserUpdate
-from backend.app.repositories.user_repositories import UserRepository
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.email.email_service import EmailService
-from backend.app.services.auth.password_service import PasswordService
 from backend.app.services.auth.permission import PermissionService
 
 
 class UserService:
     """Сервис управления пользователями"""
 
-    def __init__(self, user_repository: UserRepository, permission: PermissionService, pass_service: PasswordService,
+    def __init__(self, user_repository: IUserRepository, permission: PermissionService, pass_service: IPasswordService,
                  email_service: EmailService, image_handler: ImageHandler):
         self.user_repository = user_repository
         self.permission = permission
@@ -82,5 +82,5 @@ class UserService:
         """Удаление пользователя с проверкой прав."""
         target_user = await self.user_repository.get_or_404(db, id=user_id)
         self.permission.check_delete_permission(current_user, target_user)
-        await self.user_repository.delete_user(db=db, user_id=target_user.id)
+        await self.user_repository.remove(db=db, id=target_user.id)
         return Msg(msg="Пользователь удален успешно")

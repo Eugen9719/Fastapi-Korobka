@@ -2,6 +2,13 @@ from typing import Type
 
 from sqlmodel import SQLModel
 
+from backend.app.interface.repositories.i_booking_repo import IBookingRepository
+from backend.app.interface.repositories.i_facility_repo import IFacilityRepository
+from backend.app.interface.repositories.i_review_repo import IReviewRepository
+from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
+from backend.app.interface.repositories.i_user_repo import IUserRepository
+from backend.app.interface.repositories.i_verification_repo import IVerifyRepository
+from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.app.models import Stadium, User
 from backend.app.repositories.bookings_repositories import BookingRepository
 from backend.app.repositories.chat_repositories import MessageRepositories
@@ -58,7 +65,7 @@ class ServiceFactory:
 
     # --- Core Services ---
     @property
-    def password_service(self) -> PasswordService:
+    def password_service(self) -> IPasswordService:
         return self._password_service
 
     @property
@@ -77,24 +84,28 @@ class ServiceFactory:
 
     # --- Repository Access ---
     @property
-    def user_repo(self) -> UserRepository:
+    def user_repo(self) -> IUserRepository:
         return self._user_repo
 
     @property
-    def stadium_repo(self) -> StadiumRepository:
+    def stadium_repo(self) -> IStadiumRepository:
         return self._stadium_repo
 
     @property
-    def booking_repo(self) -> BookingRepository:
+    def booking_repo(self) -> IBookingRepository:
         return self._booking_repo
 
     @property
-    def verify_repo(self) -> VerifyRepository:
+    def verify_repo(self) -> IVerifyRepository:
         return self._verify_repo
 
     @property
-    def review_repo(self) -> ReviewRepository:
+    def review_repo(self) -> IReviewRepository:
         return self._review_repo
+
+    @property
+    def facility_repo(self) -> IFacilityRepository:
+        return self._facility_repo
 
     @property
     def message_repo(self) -> MessageRepositories:
