@@ -5,11 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.interface.base.i_base_repo import ICrudRepository, IReadRepository, IPaginateRepository
 
 from backend.app.models.additional_facility import StadiumFacilityDelete
-from backend.app.models.stadiums import StadiumsCreate, Stadium, StadiumsUpdate
+from backend.app.models.stadiums import StadiumCreate, Stadium, StadiumsUpdate
 
 
 class IStadiumRepository(IReadRepository[Stadium], IPaginateRepository[Stadium],
-                         ICrudRepository[Stadium, StadiumsCreate, StadiumsUpdate], ABC):
+                         ICrudRepository[Stadium, StadiumCreate, StadiumsUpdate], ABC):
 
     @abstractmethod
     async def is_slug_unique(self, db: AsyncSession, slug: str) -> bool:

@@ -8,12 +8,12 @@ from .base_repositories import AsyncBaseRepository, QueryMixin
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from ..models import AdditionalFacility, Booking
 from ..models.additional_facility import StadiumFacilityDelete
-from ..models.stadiums import StadiumsCreate, Stadium, StadiumsUpdate, StadiumFacility
+from ..models.stadiums import StadiumCreate, Stadium, StadiumsUpdate, StadiumFacility
 
 logger = logging.getLogger(__name__)
 
 
-class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, StadiumsCreate, StadiumsUpdate], QueryMixin):
+class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, StadiumCreate, StadiumsUpdate], QueryMixin):
     def __init__(self):
         super().__init__(Stadium)
 

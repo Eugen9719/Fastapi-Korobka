@@ -5,8 +5,9 @@ from backend.app.dependencies.auth_dep import CurrentUser, SuperUser, OwnerUser
 from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.additional_facility import StadiumFacilityDelete
 from backend.app.models.auth import Msg
-from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, StadiumsCreate, \
-    StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility
+from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, \
+    StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility, \
+    StadiumCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep, TransactionSessionDep
 
@@ -15,7 +16,7 @@ stadium_router = APIRouter()
 
 @stadium_router.post("/create", response_model=StadiumsRead)
 @sentry_capture_exceptions
-async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, schema: StadiumsCreate):
+async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, schema: StadiumCreate):
     """
     Создание нового стадиона.
 

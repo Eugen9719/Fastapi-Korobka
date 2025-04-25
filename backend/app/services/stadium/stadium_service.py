@@ -17,7 +17,7 @@ from backend.app.models.auth import Msg
 from backend.app.models.base_model_public import AdditionalFacilityReadBase
 from backend.app.models.stadium_reviews import StadiumReview
 
-from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumsCreate, StadiumsUpdate, \
+from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumCreate, StadiumsUpdate, \
     StadiumsRead, Stadium, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse
 
 from backend.app.services.auth.permission import PermissionService
@@ -39,7 +39,7 @@ class StadiumService:
         self.image_handler = image_handler
 
     @HttpExceptionWrapper
-    async def create_stadium(self, db: AsyncSession, schema: StadiumsCreate, user: User):
+    async def create_stadium(self, db: AsyncSession, schema: StadiumCreate, user: User):
         """Создание стадиона с корректной обработкой дубликатов"""
 
         if not await self.stadium_repository.is_slug_unique(db, schema.slug):

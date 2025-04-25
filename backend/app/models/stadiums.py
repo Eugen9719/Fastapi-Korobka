@@ -95,20 +95,22 @@ class PriceIntervalCreate(BaseModel):
     price: Decimal
     day_of_week: Optional[int] = None  # 0-6 (0=понедельник), None для ежедневно
 
+    @classmethod
     @field_validator('end_time')
-    def validate_time_range(self, end_time, values):
-        if 'start_time' in values and end_time <= values['start_time']:
+    def validate_time_range(cls, end_time: time, info):  # info вместо values в Pydantic v2
+        if 'start_time' in info.data and end_time <= info.data['start_time']:
             raise ValueError("End time must be after start time")
         return end_time
 
+    @classmethod
     @field_validator('day_of_week')
-    def validate_day_of_week(self, v):
+    def validate_day_of_week(cls, v: Optional[int]) -> Optional[int]:
         if v is not None and (v < 0 or v > 6):
             raise ValueError("Day of week must be between 0 (Monday) and 6 (Sunday)")
         return v
 
 
-class StadiumCreate(BaseModel):
+class StadiumCreate(SQLModel):
     name: str
     slug: str
     address: str
@@ -121,8 +123,9 @@ class StadiumCreate(BaseModel):
     default_price: int = None
     price_intervals: List[PriceIntervalCreate]
 
+    @classmethod
     @field_validator('price_intervals')
-    def validate_price_intervals(self, v):
+    def validate_price_intervals(cls, v):
         if not v:
             raise ValueError("At least one price interval must be provided")
         return v
