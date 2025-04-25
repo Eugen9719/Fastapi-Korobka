@@ -1,13 +1,27 @@
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 from typing import Optional, List
 from enum import Enum as PyEnum
-from sqlalchemy import Column, Numeric
+
+from pydantic import BaseModel, field_validator
+from sqlalchemy import Column, Numeric, Time
 from sqlmodel import SQLModel, Field, Relationship
 from backend.app.models.base_model_public import ReviewReadBase, StadiumsReadBase, AdditionalFacilityReadBase
 
 
+class PriceInterval(SQLModel, table=True):
+    __tablename__ = 'price_interval'
 
+    id: Optional[int] = Field(default=None, primary_key=True)
+    stadium_id: int = Field(foreign_key="stadium.id")
+    start_time: time = Field(sa_column=Column(Time), description="Начало интервала")
+    end_time: time = Field(sa_column=Column(Time), description="Конец интервала")
+    price: Decimal = Field(..., gt=0, description="Цена для интервала",
+                           sa_column=Column(Numeric(precision=10, scale=2)))
+    day_of_week: Optional[int] = Field(None, ge=0, le=6,
+                                       description="День недели (0-6, где 0 - понедельник). None - ежедневно")
+
+    stadium: "Stadium" = Relationship(back_populates="price_intervals")
 
 class StadiumStatus(str, PyEnum):
     ADDED = "Added"
@@ -23,8 +37,6 @@ class StadiumsBase(SQLModel):
     address: str
     description: Optional[str] = Field(None, description="Описание")
     additional_info: Optional[str] = Field(None, description="Дополнительная информация")
-    price: Decimal = Field(..., gt=0, description="Цена продукта",
-                           sa_column=Column(Numeric(precision=10, scale=2)))
     country: str
     city: str
 
@@ -46,6 +58,10 @@ class Stadium(StadiumsBase, table=True):
     owner: "User" = Relationship(back_populates="stadiums")
     stadium_reviews: List["StadiumReview"] = Relationship(back_populates="stadium", cascade_delete=True)
     stadium_facility: List["StadiumFacility"] = Relationship(back_populates="stadium")
+
+    price_intervals: List["PriceInterval"] = Relationship(back_populates="stadium", cascade_delete=True)
+    default_price: Optional[Decimal] = Field(None, gt=0, description="Базовая цена (дефолтная)",
+                                     sa_column=Column(Numeric(precision=10, scale=2)))
 
 
 
@@ -72,8 +88,47 @@ class StadiumFacility(SQLModel, table=True):
 class StadiumFacilityCreate(SQLModel):
     facility_id: int
 
-class StadiumsCreate(StadiumsBase):
-    pass
+
+class PriceIntervalCreate(BaseModel):
+    start_time: time
+    end_time: time
+    price: Decimal
+    day_of_week: Optional[int] = None  # 0-6 (0=понедельник), None для ежедневно
+
+    @field_validator('end_time')
+    def validate_time_range(self, end_time, values):
+        if 'start_time' in values and end_time <= values['start_time']:
+            raise ValueError("End time must be after start time")
+        return end_time
+
+    @field_validator('day_of_week')
+    def validate_day_of_week(self, v):
+        if v is not None and (v < 0 or v > 6):
+            raise ValueError("Day of week must be between 0 (Monday) and 6 (Sunday)")
+        return v
+
+
+class StadiumCreate(BaseModel):
+    name: str
+    slug: str
+    address: str
+    description: Optional[str] = None
+    additional_info: Optional[str] = None
+    country: str
+    city: str
+    image_url: Optional[str] = None
+    is_active: bool = False
+    default_price: int = None
+    price_intervals: List[PriceIntervalCreate]
+
+    @field_validator('price_intervals')
+    def validate_price_intervals(self, v):
+        if not v:
+            raise ValueError("At least one price interval must be provided")
+        return v
+
+
+
 
 class StadiumsUpdate(StadiumsBase):
     is_active: bool = False
