@@ -10,7 +10,7 @@ from backend.app.api.stadiums_api import stadium_router
 
 from backend.app.api.user_api import user_router
 from backend.app.api.webhook import webhook_router
-from backend.app.pages.index import page_router
+
 
 api_router = APIRouter()
 
@@ -22,6 +22,5 @@ api_router.include_router(services_router, prefix="/service", tags=["services"])
 api_router.include_router(add_review_router,  tags=["reviews"])
 api_router.include_router(webhook_router, tags=["Webhooks"])
 
-api_router.include_router(page_router, tags=["pages"])
 api_router.include_router(message_router, tags=["messages"])
 

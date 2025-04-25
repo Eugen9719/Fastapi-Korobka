@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from backend.app.dependencies.auth_dep import CurrentUser
 from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import Msg
-from backend.app.models.stadiums import CreateReview, ReviewRead, UpdateReview
+from backend.app.models.stadium_reviews import ReviewRead, CreateReview, UpdateReview
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import TransactionSessionDep
 

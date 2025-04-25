@@ -1,47 +1,12 @@
-
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
 from enum import Enum as PyEnum
 from sqlalchemy import Column, Numeric
 from sqlmodel import SQLModel, Field, Relationship
-
 from backend.app.models.base_model_public import ReviewReadBase, StadiumsReadBase, AdditionalFacilityReadBase
 
 
-class ImageBase(SQLModel):
-    url: str
-
-class Image(ImageBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
-    stadium_id: int = Field(default=None, foreign_key="stadium.id")
-    stadium: Optional["Stadium"] = Relationship(back_populates="images_all")
-
-class ImageCreate(ImageBase):
-    pass
-class ImageUpdate(ImageBase):
-    pass
-
-
-
-class StadiumReview(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", )
-    stadium_id: int = Field(foreign_key="stadium.id", description="ID связанного поля")
-    review: str = Field(...)
-    data: datetime = Field(default_factory=datetime.now, description="Дата создания  отзыва")
-
-    stadium: Optional["Stadium"] = Relationship(back_populates="stadium_reviews")
-    user_review: Optional["User"] = Relationship(back_populates="reviews")
-
-class ReviewRead(ReviewReadBase):
-    pass
-
-
-class CreateReview(SQLModel):
-    review: str
-class UpdateReview(SQLModel):
-    review: str
 
 
 class StadiumStatus(str, PyEnum):
@@ -76,7 +41,7 @@ class Stadium(StadiumsBase, table=True):
     reason: Optional[str] = Field(default=None, nullable=True)
 
     # Связи с другими моделями
-    images_all: List[Image] = Relationship(back_populates="stadium")
+    images_all: List["Image"] = Relationship(back_populates="stadium")
     bookings: List["Booking"] = Relationship(back_populates="stadium", cascade_delete=True)
     owner: "User" = Relationship(back_populates="stadiums")
     stadium_reviews: List["StadiumReview"] = Relationship(back_populates="stadium", cascade_delete=True)

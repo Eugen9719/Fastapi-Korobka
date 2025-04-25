@@ -15,9 +15,10 @@ from backend.app.models.additional_facility import StadiumFacilityDelete
 
 from backend.app.models.auth import Msg
 from backend.app.models.base_model_public import AdditionalFacilityReadBase
+from backend.app.models.stadium_reviews import StadiumReview
 
 from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumsCreate, StadiumsUpdate, \
-    StadiumsRead, Stadium, StadiumReview, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse
+    StadiumsRead, Stadium, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse
 
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper

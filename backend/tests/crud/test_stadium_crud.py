@@ -3,8 +3,8 @@ from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from backend.app.dependencies.service_factory import service_factory
-from backend.app.models.stadiums import StadiumsCreate, StadiumsUpdate, StadiumStatus, StadiumVerificationUpdate, \
-    CreateReview, UpdateReview
+from backend.app.models.stadium_reviews import CreateReview, UpdateReview
+from backend.app.models.stadiums import StadiumsCreate, StadiumsUpdate, StadiumStatus, StadiumVerificationUpdate
 
 
 @pytest.mark.anyio

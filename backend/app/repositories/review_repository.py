@@ -1,7 +1,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from backend.app.interface.repositories.i_review_repo import IReviewRepository
 from backend.app.models import StadiumReview
-from backend.app.models.stadiums import CreateReview, UpdateReview
+from backend.app.models.stadium_reviews import CreateReview, UpdateReview
 from backend.app.repositories.base_repositories import AsyncBaseRepository, QueryMixin
 
 

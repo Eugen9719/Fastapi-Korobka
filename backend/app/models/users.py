@@ -5,7 +5,8 @@ from typing import Optional, List
 from pydantic import ConfigDict
 from backend.app.models.base_model_public import UserReadBase
 from backend.app.models.bookings import Booking
-from backend.app.models.stadiums import Stadium, StadiumReview
+from backend.app.models.stadium_reviews import StadiumReview
+from backend.app.models.stadiums import Stadium
 
 
 class StatusEnum(str, PyEnum):
