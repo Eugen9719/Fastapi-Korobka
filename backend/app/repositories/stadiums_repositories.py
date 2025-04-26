@@ -1,14 +1,18 @@
 import logging
-from datetime import datetime
+from datetime import datetime, time
+from typing import Any, List
 
+from fastapi import HTTPException
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, and_
 from .base_repositories import AsyncBaseRepository, QueryMixin
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
+from ..interface.base.i_base_repo import CreateType, ModelType
 from ..models import AdditionalFacility, Booking
 from ..models.additional_facility import StadiumFacilityDelete
-from ..models.stadiums import StadiumCreate, Stadium, StadiumsUpdate, StadiumFacility
+from ..models.stadiums import StadiumCreate, Stadium, StadiumsUpdate, StadiumFacility, PriceInterval, \
+    PriceIntervalCreate
 
 logger = logging.getLogger(__name__)
 
@@ -77,3 +81,62 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
         # Выполняем запрос и возвращаем результат
         result = await db.execute(available_stadiums)
         return result.scalars().all()
+
+    async def check_intersection(
+        self,
+        db: AsyncSession,
+        stadium_id: int,
+        start_time: time,
+        end_time: time
+    ) -> bool:
+        result = await db.execute(
+            select(PriceInterval)
+            .where(
+                PriceInterval.stadium_id == stadium_id,
+                PriceInterval.start_time < end_time,
+                PriceInterval.end_time > start_time
+            )
+        )
+        return result.scalar_one_or_none() is not None
+
+    async def check_time(self, start_time: time, end_time: time):
+        if start_time >= end_time:
+            raise HTTPException(status_code=400, detail="start_time должен быть меньше end_time")
+
+    async def validate_price_interval(
+        self,
+        db: AsyncSession,
+        stadium_id: int,
+        start_time: time,
+        end_time: time
+    ):
+        await self.check_time(start_time, end_time)
+
+        if await self.check_intersection(db, stadium_id, start_time, end_time):
+            raise HTTPException(
+                status_code=400,
+                detail="Ценовой интервал пересекается с существующим."
+            )
+
+
+    async def add_price_intervals(
+            self,
+            db: AsyncSession,
+            price_intervals: List[PriceIntervalCreate],  # <-- Явный тип
+            stadium_id: int
+    ):
+        for interval in price_intervals:
+            start_time = interval.start_time
+            end_time = interval.end_time
+
+            await self.validate_price_interval(db, stadium_id, start_time, end_time)
+
+            db.add(PriceInterval(
+                stadium_id=stadium_id,
+                start_time=start_time,
+                end_time=end_time,
+                price=interval.price
+            ))
+
+        await db.flush()
+

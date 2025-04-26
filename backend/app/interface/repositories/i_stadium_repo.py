@@ -34,3 +34,10 @@ class IStadiumRepository(IReadRepository[Stadium], IPaginateRepository[Stadium],
     @abstractmethod
     async def search_available_stadiums(self, db: AsyncSession, city: str, start_time: datetime, end_time: datetime):
         pass
+
+
+
+
+    @abstractmethod
+    async def add_price_intervals(self, db,  price_intervals, stadium_id):
+        pass

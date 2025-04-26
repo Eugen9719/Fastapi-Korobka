@@ -7,7 +7,7 @@ from backend.app.models.additional_facility import StadiumFacilityDelete
 from backend.app.models.auth import Msg
 from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, \
     StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility, \
-    StadiumCreate
+    StadiumCreate, StadiumCreateWithInterval, PriceIntervalCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep, TransactionSessionDep
 
@@ -16,7 +16,7 @@ stadium_router = APIRouter()
 
 @stadium_router.post("/create", response_model=StadiumsRead)
 @sentry_capture_exceptions
-async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, schema: StadiumCreate):
+async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, schema: StadiumCreateWithInterval):
     """
     Создание нового стадиона.
 
@@ -26,6 +26,19 @@ async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     :return: Созданный стадион в формате StadiumsRead
     """
     return await service_factory.stadium_service.create_stadium(db, schema=schema, user=current_user)
+
+@stadium_router.post("/create-intervals/{stadium_id}", response_model=StadiumsRead)
+@sentry_capture_exceptions
+async def create_price_intervals(db: TransactionSessionDep, stadium_id:int,  current_user: CurrentUser, schema: List[PriceIntervalCreate]):
+    """
+    Создание нового стадиона.
+
+    :param db: Сессия базы данных
+    :param current_user: Данные текущего пользователя (автоматически извлекаются из токена)
+    :param schema: Валидированные данные для создания стадиона
+    :return: Созданный стадион в формате StadiumsRead
+    """
+    return await service_factory.stadium_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
 
 
 @stadium_router.put("/update/{stadium_id}", response_model=StadiumsRead)

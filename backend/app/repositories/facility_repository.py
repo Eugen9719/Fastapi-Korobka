@@ -22,22 +22,17 @@ class FacilityRepository(IFacilityRepository, AsyncBaseRepository[AdditionalFaci
         """
         Создает несколько объектов в базе данных.
         """
-        try:
-            db_objs = [self.model(**s.model_dump(), **kwargs) for s in schema]  # Составляем список объектов
-            db.add_all(db_objs)
-            await db.commit()
+
+        db_objs = [self.model(**s.model_dump(), **kwargs) for s in schema]  # Составляем список объектов
+        db.add_all(db_objs)
+        await db.commit()
 
             # Обновляем все объекты
-            for obj in db_objs:
-                await db.refresh(obj)
+        for obj in db_objs:
+            await db.refresh(obj)
 
-            return db_objs
-        except Exception as e:
-            logger.error(f"Create multi error: {e}")
-            raise HTTPException(
-                status_code=400,
-                detail="Failed to create multiple objects"
-            )
+        return db_objs
+
 
     async def get_facility(self, db: AsyncSession, facility_id: int) -> Optional[AdditionalFacility]:
         result = await db.execute(

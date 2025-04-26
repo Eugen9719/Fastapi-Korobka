@@ -7,6 +7,7 @@ from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from watchfiles import awatch
 
 from backend.app.interface.utils.i_image_handler import ImageHandler
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
@@ -18,7 +19,9 @@ from backend.app.models.base_model_public import AdditionalFacilityReadBase
 from backend.app.models.stadium_reviews import StadiumReview
 
 from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumCreate, StadiumsUpdate, \
-    StadiumsRead, Stadium, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse
+    StadiumsRead, Stadium, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse, PriceInterval, \
+    StadiumCreateWithInterval, PriceIntervalCreate
+from backend.app.services import stadium
 
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
@@ -28,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class StadiumService:
-    """Сервис управления пользователями"""
+    """Сервис управления стадионом"""
 
     def __init__(self, stadium_repository: IStadiumRepository, permission: PermissionService, redis: RedisClient,
                  image_handler: ImageHandler,
@@ -39,14 +42,36 @@ class StadiumService:
         self.image_handler = image_handler
 
     @HttpExceptionWrapper
-    async def create_stadium(self, db: AsyncSession, schema: StadiumCreate, user: User):
-        """Создание стадиона с корректной обработкой дубликатов"""
+    async def create_stadium(self, db: AsyncSession, schema: StadiumCreateWithInterval, user: User):
+        """Создание стадиона"""
 
+        # Проверка уникальности слага
         if not await self.stadium_repository.is_slug_unique(db, schema.slug):
-            logger.info(f"Слаг используется: {schema.slug} пользователем {user.id}")  # INFO вместо WARNING
+            logger.info(f"Слаг используется: {schema.slug} пользователем {user.id}")
             raise HTTPException(status_code=400, detail="Слаг уже используется")
 
-        return await self.stadium_repository.create(db=db, schema=schema, user_id=user.id)
+        # Создаем стадион (без интервалов)
+        stadium_data = schema.model_dump(exclude={"price_intervals"})
+        new_stadium = await self.stadium_repository.create(
+            db=db,
+            schema=StadiumCreate(**stadium_data),
+            user_id=user.id
+        )
+
+        # Если price_intervals не пустой, добавляем интервалы
+        if schema.price_intervals:
+            await self.stadium_repository.add_price_intervals(db, schema.price_intervals, new_stadium.id)
+
+        return new_stadium
+
+    async def create_price_intervals(self, db:AsyncSession, schema:List[PriceIntervalCreate],stadium_id:int,  user:User):
+        update_stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        self.permission.check_owner_or_admin(current_user=user, model=update_stadium)
+        if  update_stadium.status == StadiumStatus.VERIFICATION:
+            raise HTTPException(status_code=400,
+                                detail="вы не можете изменить объект, пока у него статус 'На верификации'")
+        await self.stadium_repository.add_price_intervals(db=db, price_intervals=schema, stadium_id=stadium_id)
+        return update_stadium
 
     @HttpExceptionWrapper
     async def update_stadium(self, db: AsyncSession, schema: StadiumsUpdate, stadium_id: int, user: User):

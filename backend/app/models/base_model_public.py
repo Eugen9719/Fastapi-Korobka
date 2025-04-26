@@ -40,7 +40,7 @@ class StadiumsReadBase(SQLModel):
     address: str
     description: Optional[str]
     additional_info: Optional[str]
-    price: Decimal
+    default_price: Decimal
     country: str
     city: str
     image_url: Optional[str]

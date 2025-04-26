@@ -23,6 +23,7 @@ class PriceInterval(SQLModel, table=True):
 
     stadium: "Stadium" = Relationship(back_populates="price_intervals")
 
+
 class StadiumStatus(str, PyEnum):
     ADDED = "Added"
     REJECTED = "Rejected"
@@ -61,10 +62,7 @@ class Stadium(StadiumsBase, table=True):
 
     price_intervals: List["PriceInterval"] = Relationship(back_populates="stadium", cascade_delete=True)
     default_price: Optional[Decimal] = Field(None, gt=0, description="Базовая цена (дефолтная)",
-                                     sa_column=Column(Numeric(precision=10, scale=2)))
-
-
-
+                                             sa_column=Column(Numeric(precision=10, scale=2)))
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -82,7 +80,6 @@ class StadiumFacility(SQLModel, table=True):
     facility_id: int = Field(foreign_key="additional_facility.id")
     stadium: Optional["Stadium"] = Relationship(back_populates="stadium_facility")
     facility: Optional["AdditionalFacility"] = Relationship(back_populates="stadium")
-
 
 
 class StadiumFacilityCreate(SQLModel):
@@ -110,7 +107,7 @@ class PriceIntervalCreate(BaseModel):
         return v
 
 
-class StadiumCreate(SQLModel):
+class StadiumCreateWithInterval(SQLModel):
     name: str
     slug: str
     address: str
@@ -131,17 +128,27 @@ class StadiumCreate(SQLModel):
         return v
 
 
+class StadiumCreate(SQLModel):
+    name: str
+    slug: str
+    address: str
+    description: Optional[str] = None
+    additional_info: Optional[str] = None
+    country: str
+    city: str
+    image_url: Optional[str] = None
+    is_active: bool = False
+    default_price: int = None
 
 
 class StadiumsUpdate(StadiumsBase):
     is_active: bool = False
 
+
 class StadiumVerificationUpdate(SQLModel):
     is_active: bool | None = None
     status: StadiumStatus
     reason: Optional[str] | None = None
-
-
 
 
 class StadiumsRead(StadiumsReadBase):
