@@ -4,8 +4,9 @@ from typing import List
 
 import sentry_sdk
 from fastapi import HTTPException, UploadFile, File
+from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
-from sqlmodel import select
+from sqlmodel import select, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from watchfiles import awatch
 
@@ -20,7 +21,7 @@ from backend.app.models.stadium_reviews import StadiumReview
 
 from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumCreate, StadiumsUpdate, \
     StadiumsRead, Stadium, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse, PriceInterval, \
-    StadiumCreateWithInterval, PriceIntervalCreate
+    StadiumCreateWithInterval, PriceIntervalCreate, StadiumPriceIntervalDel
 from backend.app.services import stadium
 
 from backend.app.services.auth.permission import PermissionService
@@ -64,14 +65,40 @@ class StadiumService:
 
         return new_stadium
 
-    async def create_price_intervals(self, db:AsyncSession, schema:List[PriceIntervalCreate],stadium_id:int,  user:User):
+    async def create_price_intervals(self, db: AsyncSession, schema: List[PriceIntervalCreate], stadium_id: int,
+                                     user: User):
         update_stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
         self.permission.check_owner_or_admin(current_user=user, model=update_stadium)
-        if  update_stadium.status == StadiumStatus.VERIFICATION:
+        if update_stadium.status == StadiumStatus.VERIFICATION:
             raise HTTPException(status_code=400,
                                 detail="вы не можете изменить объект, пока у него статус 'На верификации'")
         await self.stadium_repository.add_price_intervals(db=db, price_intervals=schema, stadium_id=stadium_id)
         return update_stadium
+
+    @HttpExceptionWrapper
+    async def delete_price_interval(self, db: AsyncSession, user: User, interval_id: int, stadium_id: int):
+        """
+        Удаляет ценовой интервал стадиона.
+        """
+
+        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        self.permission.check_owner_or_admin(current_user=user, model=stadium)
+
+        was_active = stadium.is_active
+
+        deleted_interval_id = await self.stadium_repository.delete_relation(db=db, model=PriceInterval, stadium_id=stadium_id,
+                                                                   relation_id=interval_id)
+
+        if deleted_interval_id is None:
+            raise HTTPException(status_code=404, detail="Ценовой интервал не найден")
+
+        if was_active:
+            await self.redis.invalidate_cache("stadiums:all_active",
+                                              f"Удаление ценового интервала {deleted_interval_id} стадиона {stadium_id}")
+
+        logger.info(f"Ценовой интервал {deleted_interval_id} стадиона {stadium_id} удален пользователем {user.id}")
+
+        return Msg(msg="Ценовой интервал был удален успешно")
 
     @HttpExceptionWrapper
     async def update_stadium(self, db: AsyncSession, schema: StadiumsUpdate, stadium_id: int, user: User):

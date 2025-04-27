@@ -1,14 +1,13 @@
 import logging
 from datetime import datetime, time
-from typing import Any, List
+from typing import List, Type
 
 from fastapi import HTTPException
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, and_
+from sqlmodel import select, and_, SQLModel
 from .base_repositories import AsyncBaseRepository, QueryMixin
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
-from ..interface.base.i_base_repo import CreateType, ModelType
 from ..models import AdditionalFacility, Booking
 from ..models.additional_facility import StadiumFacilityDelete
 from ..models.stadiums import StadiumCreate, Stadium, StadiumsUpdate, StadiumFacility, PriceInterval, \
@@ -32,7 +31,6 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
             select(1).where(AdditionalFacility.id == facility_id)
         ) is not None
 
-
     async def is_service_linked(self, db: AsyncSession, stadium_id: int, facility_id: int) -> bool:
         """Проверяет, связан ли сервис со стадионом"""
         return await db.scalar(
@@ -42,7 +40,6 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
             )
         ) is not None
 
-
     async def link_service_to_stadium(self, db: AsyncSession, stadium_id: int, facility_id: int, ) -> None:
         """Создает связь между стадионом и сервисом"""
         db.add(StadiumFacility(
@@ -50,15 +47,33 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
             facility_id=facility_id,
         ))
 
+
+    # сделать один общий метод для удаления связанных объектов
     async def delete_service(self, db: AsyncSession, schema: StadiumFacilityDelete):
         return await db.execute(
             delete(StadiumFacility)
             .where(
-                StadiumFacility.stadium_id == schema.stadium_id,
-                StadiumFacility.facility_id == schema.facility_id
+                and_(
+                    StadiumFacility.stadium_id == schema.stadium_id,
+                    StadiumFacility.facility_id == schema.facility_id
+                )
             )
             .returning(StadiumFacility.id)
         )
+
+    async def delete_relation(self, db: AsyncSession, model:Type[SQLModel],  stadium_id: int, relation_id: int):
+        result = await db.execute(
+            delete(model)
+            .where(
+                and_(
+                    model.stadium_id == stadium_id,
+                    model.id == relation_id
+                )
+            )
+            .returning(model.id)
+        )
+        return result.scalar_one_or_none()
+
 
 
     async def search_available_stadiums(self, db: AsyncSession, city: str, start_time: datetime, end_time: datetime):
@@ -83,11 +98,11 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
         return result.scalars().all()
 
     async def check_intersection(
-        self,
-        db: AsyncSession,
-        stadium_id: int,
-        start_time: time,
-        end_time: time
+            self,
+            db: AsyncSession,
+            stadium_id: int,
+            start_time: time,
+            end_time: time
     ) -> bool:
         result = await db.execute(
             select(PriceInterval)
@@ -104,11 +119,11 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
             raise HTTPException(status_code=400, detail="start_time должен быть меньше end_time")
 
     async def validate_price_interval(
-        self,
-        db: AsyncSession,
-        stadium_id: int,
-        start_time: time,
-        end_time: time
+            self,
+            db: AsyncSession,
+            stadium_id: int,
+            start_time: time,
+            end_time: time
     ):
         await self.check_time(start_time, end_time)
 
@@ -117,7 +132,6 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
                 status_code=400,
                 detail="Ценовой интервал пересекается с существующим."
             )
-
 
     async def add_price_intervals(
             self,
@@ -139,4 +153,3 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
             ))
 
         await db.flush()
-

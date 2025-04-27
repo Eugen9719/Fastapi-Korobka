@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Type
+
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import SQLModel
 
 from backend.app.interface.base.i_base_repo import ICrudRepository, IReadRepository, IPaginateRepository
 
@@ -40,4 +43,8 @@ class IStadiumRepository(IReadRepository[Stadium], IPaginateRepository[Stadium],
 
     @abstractmethod
     async def add_price_intervals(self, db,  price_intervals, stadium_id):
+        pass
+
+    @abstractmethod
+    async def delete_relation(self, db: AsyncSession, model:Type[SQLModel],  stadium_id: int, relation_id: int):
         pass

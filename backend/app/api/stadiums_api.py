@@ -7,7 +7,7 @@ from backend.app.models.additional_facility import StadiumFacilityDelete
 from backend.app.models.auth import Msg
 from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, \
     StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility, \
-    StadiumCreate, StadiumCreateWithInterval, PriceIntervalCreate
+     StadiumCreateWithInterval, PriceIntervalCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep, TransactionSessionDep
 
@@ -27,18 +27,7 @@ async def create_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     """
     return await service_factory.stadium_service.create_stadium(db, schema=schema, user=current_user)
 
-@stadium_router.post("/create-intervals/{stadium_id}", response_model=StadiumsRead)
-@sentry_capture_exceptions
-async def create_price_intervals(db: TransactionSessionDep, stadium_id:int,  current_user: CurrentUser, schema: List[PriceIntervalCreate]):
-    """
-    Создание нового стадиона.
 
-    :param db: Сессия базы данных
-    :param current_user: Данные текущего пользователя (автоматически извлекаются из токена)
-    :param schema: Валидированные данные для создания стадиона
-    :return: Созданный стадион в формате StadiumsRead
-    """
-    return await service_factory.stadium_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
 
 
 @stadium_router.put("/update/{stadium_id}", response_model=StadiumsRead)
@@ -54,6 +43,7 @@ async def update_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     :return: Обновленный стадион в формате StadiumsRead
     """
     return await service_factory.stadium_service.update_stadium(db, schema=schema, stadium_id=stadium_id, user=current_user)
+
 
 
 @stadium_router.delete("/delete/{stadium_id}")
@@ -206,3 +196,31 @@ async def stadium_search(db: SessionDep, city: str, start_time: datetime, end_ti
     :return: Список доступных стадионов
     """
     return await service_factory.stadium_service.get_available_stadiums(db, city=city, start_time=start_time, end_time=end_time)
+
+
+@stadium_router.post("/create-intervals/{stadium_id}", response_model=StadiumsRead)
+@sentry_capture_exceptions
+async def create_price_intervals(db: TransactionSessionDep, stadium_id:int,  current_user: CurrentUser, schema: List[PriceIntervalCreate]):
+    """
+    Создание ценовых интервалов для стадиона.
+
+    :param stadium_id: id стадиона
+    :param db: Сессия базы данных
+    :param current_user: Данные текущего пользователя (автоматически извлекаются из токена)
+    :param schema: Валидированные данные для создания интервалов
+    :return: Созданный стадион в формате StadiumsRead
+    """
+    return await service_factory.stadium_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
+
+@stadium_router.delete("/del-intervals/{stadium_id}/{interval_id}")
+@sentry_capture_exceptions
+async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser,interval_id:int, stadium_id: int) -> Msg:
+    """
+    Удаление ценового интервала стадиона по идентификатору.
+
+    :param db: Сессия базы данных
+    :param current_user: Данные текущего пользователя (должен быть администратором или владельцем)
+    :param stadium_id: Идентификатор стадиона для удаления
+    :return: Сообщение о результате операции
+    """
+    return await service_factory.stadium_service.delete_price_interval(db,interval_id=interval_id, stadium_id=stadium_id, user=current_user)

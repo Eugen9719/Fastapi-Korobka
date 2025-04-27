@@ -105,7 +105,8 @@ class PriceIntervalCreate(BaseModel):
         if v is not None and (v < 0 or v > 6):
             raise ValueError("Day of week must be between 0 (Monday) and 6 (Sunday)")
         return v
-
+class  StadiumPriceIntervalDel(BaseModel):
+    interval_id: int
 
 class StadiumCreateWithInterval(SQLModel):
     name: str
