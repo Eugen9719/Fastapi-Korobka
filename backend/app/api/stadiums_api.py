@@ -3,11 +3,18 @@ from typing import List
 from fastapi import APIRouter, UploadFile, File, Query
 from backend.app.dependencies.auth_dep import CurrentUser, SuperUser, OwnerUser
 from backend.app.dependencies.service_factory import service_factory
-from backend.app.models.additional_facility import StadiumFacilityDelete
 from backend.app.models.auth import Msg
-from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, \
-    StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility, \
-     StadiumCreateWithInterval, PriceIntervalCreate
+from backend.app.models.stadiums import (
+    StadiumsRead,
+    PaginatedStadiumsResponse,
+    StadiumsUpdate,
+    StadiumVerificationUpdate,
+    StadiumStatus,
+    StadiumFacilityCreate,
+    StadiumsReadWithFacility,
+    StadiumCreateWithInterval,
+    PriceIntervalCreate
+)
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep, TransactionSessionDep
 
@@ -104,7 +111,7 @@ async def upload_image_stadium(db: TransactionSessionDep, stadium_id: int, user:
     :param file: Загружаемое изображение
     :return: Результат операции в виде словаря
     """
-    return await service_factory.stadium_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
+    return await service_factory.stadium_image_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
 
 
 @stadium_router.get('/all', response_model=List[StadiumsRead])
@@ -166,22 +173,16 @@ async def add_facility_to_stadium(db: TransactionSessionDep, stadium_id: int, sc
     :param schema: Список услуг для добавления
     :return: Список добавленных услуг
     """
-    return await service_factory.stadium_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
+    return await service_factory.stadium_facility_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
 
 
-@stadium_router.delete("/delete-service", response_model=dict)
+@stadium_router.delete("/del-service/{stadium_id}/{facility_id}")
 @sentry_capture_exceptions
-async def stadium_delete_facility(db: TransactionSessionDep, schema: StadiumFacilityDelete, user: CurrentUser):
+async def stadium_delete_facility(db: TransactionSessionDep, current_user: CurrentUser, facility_id:int, stadium_id: int) -> Msg:
     """
     Удаление услуги у стадиона.
-
-    :param db: Сессия базы данных
-    :param user: Данные текущего пользователя
-    :param schema: Данные для удаления (идентификаторы стадиона и услуги)
-    :return: Результат операции в виде словаря
     """
-    return await service_factory.stadium_service.delete_facility_from_stadium(db, schema=schema, user=user)
-
+    return await service_factory.stadium_facility_service.delete_facility_from_stadium(db,facility_id=facility_id, stadium_id=stadium_id, user=current_user)
 
 @stadium_router.get('/search', response_model=List[StadiumsRead])
 @sentry_capture_exceptions

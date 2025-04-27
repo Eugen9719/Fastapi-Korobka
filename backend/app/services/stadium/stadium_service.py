@@ -3,16 +3,13 @@ from datetime import datetime
 from typing import List
 
 import sentry_sdk
-from fastapi import HTTPException, UploadFile, File
+from fastapi import HTTPException
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from backend.app.interface.utils.i_image_handler import ImageHandler
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from backend.app.models import User
-from backend.app.models.additional_facility import StadiumFacilityDelete
-
 from backend.app.models.auth import Msg
 from backend.app.models.base_model_public import AdditionalFacilityReadBase
 from backend.app.models.stadium_reviews import StadiumReview
@@ -24,7 +21,6 @@ from backend.app.models.stadiums import (
     StadiumsRead,
     Stadium,
     StadiumsReadWithFacility,
-    StadiumFacilityCreate,
     PaginatedStadiumsResponse,
     StadiumCreateWithInterval
 )
@@ -39,13 +35,10 @@ logger = logging.getLogger(__name__)
 class StadiumService:
     """Сервис управления стадионом"""
 
-    def __init__(self, stadium_repository: IStadiumRepository, permission: PermissionService, redis: RedisClient,
-                 image_handler: ImageHandler,
-                 ):
+    def __init__(self, stadium_repository: IStadiumRepository, permission: PermissionService, redis: RedisClient):
         self.stadium_repository = stadium_repository
         self.permission = permission
         self.redis = redis
-        self.image_handler = image_handler
 
     @HttpExceptionWrapper
     async def create_stadium(self, db: AsyncSession, schema: StadiumCreateWithInterval, user: User):
@@ -113,29 +106,6 @@ class StadiumService:
             await self.redis.invalidate_cache("stadiums:all_active", f"Удаление стадиона {stadium_id}")
         logger.info(f"Стадион {stadium_id} удален пользователем {user.id}")
         return Msg(msg="Стадион удален успешно")
-
-    @HttpExceptionWrapper
-    async def upload_image(self, db: AsyncSession, stadium_id: int, user: User, file: UploadFile = File(...)):
-        """
-        Загружает изображение для стадиона.
-        """
-
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
-        if stadium.status == StadiumStatus.VERIFICATION:
-            raise HTTPException(status_code=400,
-                                detail="вы не можете изменить объект, пока у него статус 'На верификации")
-        was_active = stadium.is_active
-
-        await self.image_handler.delete_old_image(db, stadium)
-        image = await self.image_handler.upload_image(db=db, instance=stadium, file=file)
-        logger.info(f"Изображение загружено для стадиона {stadium_id}")
-
-        if was_active and not stadium.is_active:
-            await self.redis.invalidate_cache("stadiums:all_active",
-                                              f"Загрузка изображения для стадиона {stadium_id}")
-        await self.redis.invalidate_cache(f"stadiums:vendor:{user.id}", f"Обновление стадиона {stadium_id}")
-
-        return image
 
     @HttpExceptionWrapper
     async def get_stadiums(self, db: AsyncSession, ):
@@ -217,61 +187,6 @@ class StadiumService:
             update={"stadium_facility": facility_response})
 
         return stadium_with_facility
-
-    @HttpExceptionWrapper
-    async def add_facility_stadium(self, db: AsyncSession, stadium_id: int,
-                                   facility_schema: List[StadiumFacilityCreate], user: User):
-
-        stadium = await self.stadium_repository.get_or_404(db, id=stadium_id)
-        self.permission.check_owner_or_admin(user, stadium)
-
-        added = 0
-        for facility in facility_schema:
-            if not await self.stadium_repository.service_exists(db, facility.facility_id):
-                raise HTTPException(404, f"Сервис с ID {facility.facility_id} не найден")
-
-                # 2.2. Проверяем, что сервис еще не добавлен
-            if await self.stadium_repository.is_service_linked(db, stadium_id, facility.facility_id):
-                continue
-
-            await self.stadium_repository.link_service_to_stadium(
-                db, stadium_id, facility.facility_id
-            )
-            added += 1
-
-        if added == 0:
-            raise HTTPException(400, "Нет новых сервисов для добавления")
-        await self.redis.delete_cache_by_prefix("stadiums:")
-        return {f"message": f"Добавлено {added} сервисов"}
-
-    @HttpExceptionWrapper
-    async def delete_facility_from_stadium(self, db: AsyncSession, schema: StadiumFacilityDelete, user: User) -> dict:
-        """
-        Удаляет связь сервиса со стадионом.
-        """
-
-        # 1. Проверка прав доступа
-        stadium = await self.stadium_repository.get_or_404(db, id=schema.stadium_id)
-        self.permission.check_owner_or_admin(user, stadium)
-
-        # 2. Поиск и удаление связи в одной операции
-        delete_result = await self.stadium_repository.delete_service(db, schema)
-
-        if not delete_result.scalar_one_or_none():
-            raise HTTPException(404, "Связь сервиса со стадионом не найдена")
-
-        # 3. Инвалидация кеша (перед коммитом для атомарности)
-        await self.redis.delete_cache_by_prefix(f"stadium:{schema.stadium_id}:")
-
-        logger.info(
-            f"Удален сервис {schema.facility_id} со стадиона {schema.stadium_id} "
-            f"пользователем {user.id}"
-        )
-
-        return {
-            "status": "success",
-            "message": "Связь сервиса со стадионом успешно удалена"
-        }
 
     @HttpExceptionWrapper
     async def get_available_stadiums(self, db: AsyncSession, city: str, start_time: datetime, end_time: datetime) -> \

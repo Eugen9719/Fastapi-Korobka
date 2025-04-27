@@ -21,8 +21,7 @@ class StadiumIntervalsService:
         self.permission = permission
         self.redis = redis
 
-
-
+    @HttpExceptionWrapper
     async def create_price_intervals(self, db: AsyncSession, schema: List[PriceIntervalCreate], stadium_id: int,
                                      user: User):
         update_stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)

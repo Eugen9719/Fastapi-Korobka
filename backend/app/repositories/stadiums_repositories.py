@@ -9,7 +9,6 @@ from sqlmodel import select, and_, SQLModel
 from .base_repositories import AsyncBaseRepository, QueryMixin
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from ..models import AdditionalFacility, Booking
-from ..models.additional_facility import StadiumFacilityDelete
 from ..models.stadiums import StadiumCreate, Stadium, StadiumsUpdate, StadiumFacility, PriceInterval, \
     PriceIntervalCreate
 
@@ -47,19 +46,6 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
             facility_id=facility_id,
         ))
 
-
-    # сделать один общий метод для удаления связанных объектов
-    async def delete_service(self, db: AsyncSession, schema: StadiumFacilityDelete):
-        return await db.execute(
-            delete(StadiumFacility)
-            .where(
-                and_(
-                    StadiumFacility.stadium_id == schema.stadium_id,
-                    StadiumFacility.facility_id == schema.facility_id
-                )
-            )
-            .returning(StadiumFacility.id)
-        )
 
     async def delete_relation(self, db: AsyncSession, model:Type[SQLModel],  stadium_id: int, relation_id: int):
         result = await db.execute(

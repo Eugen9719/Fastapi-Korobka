@@ -28,6 +28,8 @@ from backend.app.services.facility.facility_service import FacilityService
 from backend.app.services.image.image_service import CloudinaryImageHandler
 from backend.app.services.redis import RedisClient
 from backend.app.services.review.review_service import ReviewService
+from backend.app.services.stadium.stadium_facility_service import StadiumFacilityService
+from backend.app.services.stadium.stadium_image_service import StadiumImageService
 from backend.app.services.stadium.stadium_intervals_service import StadiumIntervalsService
 from backend.app.services.stadium.stadium_service import StadiumService
 from backend.app.services.stadium.stadium_verif_service import StadiumVerifService
@@ -63,6 +65,8 @@ class ServiceFactory:
         self._stadium_service = None
         self._stadium_verif_service = None
         self._stadium_intervals_service = None
+        self._stadium_facility_service = None
+        self._stadium_image_service = None
 
 
     def get_image_handler(self, model_type: Type[SQLModel]) -> CloudinaryImageHandler:
@@ -139,8 +143,7 @@ class ServiceFactory:
             self._stadium_service = StadiumService(
                 stadium_repository=self._stadium_repo,
                 permission=self._permission_service,
-                redis=self._redis_client,
-                image_handler=self.get_image_handler(Stadium)
+                redis=self._redis_client
             )
         return self._stadium_service
 
@@ -163,6 +166,27 @@ class ServiceFactory:
                 redis=self._redis_client
             )
         return self._stadium_verif_service
+
+    @property
+    def stadium_facility_service(self) -> StadiumFacilityService:
+        if self._stadium_verif_service is None:
+            self._stadium_verif_service = StadiumFacilityService(
+                stadium_repository=self._stadium_repo,
+                permission=self._permission_service,
+                redis=self._redis_client
+            )
+        return self._stadium_facility_service
+
+    @property
+    def stadium_image_service(self) -> StadiumImageService:
+        if self._stadium_service is None:
+            self._stadium_service = StadiumImageService(
+                stadium_repository=self._stadium_repo,
+                permission=self._permission_service,
+                redis=self._redis_client,
+                image_handler=self.get_image_handler(Stadium)
+            )
+        return self._stadium_image_service
 
     ##############################################
     @property
