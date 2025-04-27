@@ -28,6 +28,7 @@ from backend.app.services.facility.facility_service import FacilityService
 from backend.app.services.image.image_service import CloudinaryImageHandler
 from backend.app.services.redis import RedisClient
 from backend.app.services.review.review_service import ReviewService
+from backend.app.services.stadium.stadium_intervals_service import StadiumIntervalsService
 from backend.app.services.stadium.stadium_service import StadiumService
 from backend.app.services.stadium.stadium_verif_service import StadiumVerifService
 
@@ -61,6 +62,7 @@ class ServiceFactory:
 
         self._stadium_service = None
         self._stadium_verif_service = None
+        self._stadium_intervals_service = None
 
 
     def get_image_handler(self, model_type: Type[SQLModel]) -> CloudinaryImageHandler:
@@ -130,6 +132,7 @@ class ServiceFactory:
             )
         return self._review_service
 
+    ############# Stadium #########################
     @property
     def stadium_service(self) -> StadiumService:
         if self._stadium_service is None:
@@ -152,6 +155,17 @@ class ServiceFactory:
         return self._stadium_verif_service
 
     @property
+    def stadium_intervals_service(self) -> StadiumIntervalsService:
+        if self._stadium_verif_service is None:
+            self._stadium_verif_service = StadiumIntervalsService(
+                stadium_repository=self._stadium_repo,
+                permission=self._permission_service,
+                redis=self._redis_client
+            )
+        return self._stadium_verif_service
+
+    ##############################################
+    @property
     def facility_service(self) -> FacilityService:
         if self._facility_service is None:
             self._facility_service = FacilityService(
@@ -171,6 +185,8 @@ class ServiceFactory:
             )
         return self._booking_service
 
+
+    ################# User ####################
     @property
     def user_auth(self) -> UserAuthentication:
         if self._user_auth is None:

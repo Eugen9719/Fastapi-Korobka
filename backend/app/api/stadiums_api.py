@@ -210,11 +210,11 @@ async def create_price_intervals(db: TransactionSessionDep, stadium_id:int,  cur
     :param schema: Валидированные данные для создания интервалов
     :return: Созданный стадион в формате StadiumsRead
     """
-    return await service_factory.stadium_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
+    return await service_factory.stadium_intervals_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
 
 @stadium_router.delete("/del-intervals/{stadium_id}/{interval_id}")
 @sentry_capture_exceptions
-async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser,interval_id:int, stadium_id: int) -> Msg:
+async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser, interval_id:int, stadium_id: int) -> Msg:
     """
     Удаление ценового интервала стадиона по идентификатору.
 
@@ -223,4 +223,4 @@ async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser,
     :param stadium_id: Идентификатор стадиона для удаления
     :return: Сообщение о результате операции
     """
-    return await service_factory.stadium_service.delete_price_interval(db,interval_id=interval_id, stadium_id=stadium_id, user=current_user)
+    return await service_factory.stadium_intervals_service.delete_price_interval(db,interval_id=interval_id, stadium_id=stadium_id, user=current_user)
