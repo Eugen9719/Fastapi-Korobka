@@ -3,11 +3,18 @@ from typing import List
 from fastapi import APIRouter, UploadFile, File, Query
 from backend.app.dependencies.auth_dep import CurrentUser, SuperUser, OwnerUser
 from backend.app.dependencies.service_factory import service_factory
-from backend.app.models.additional_facility import StadiumFacilityDelete
 from backend.app.models.auth import Msg
-from backend.app.models.stadiums import StadiumsRead, PaginatedStadiumsResponse, \
-    StadiumsUpdate, StadiumVerificationUpdate, StadiumStatus, StadiumFacilityCreate, StadiumsReadWithFacility, \
-     StadiumCreateWithInterval, PriceIntervalCreate
+from backend.app.models.stadiums import (
+    StadiumsRead,
+    PaginatedStadiumsResponse,
+    StadiumsUpdate,
+    StadiumVerificationUpdate,
+    StadiumStatus,
+    StadiumFacilityCreate,
+    StadiumsReadWithFacility,
+    StadiumCreateWithInterval,
+    PriceIntervalCreate
+)
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core.db import SessionDep, TransactionSessionDep
 
@@ -60,9 +67,9 @@ async def delete_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     return await service_factory.stadium_service.delete_stadium(db, stadium_id=stadium_id, user=current_user)
 
 
-@stadium_router.patch('/start-verification/{stadium_id}', response_model=StadiumsRead)
+@stadium_router.patch('/start-verification/{stadium_id}')
 @sentry_capture_exceptions
-async def start_verification(stadium_id: int, db: TransactionSessionDep, user: CurrentUser):
+async def start_verification(stadium_id: int, db: TransactionSessionDep, user: CurrentUser) ->Msg:
     """
     Запуск процесса верификации стадиона.
 
@@ -71,14 +78,14 @@ async def start_verification(stadium_id: int, db: TransactionSessionDep, user: C
     :param stadium_id: Идентификатор стадиона для верификации
     :return: Стадион с обновленным статусом "Верификация"
     """
-    return await service_factory.stadium_service.verify_stadium(
+    return await service_factory.stadium_verif_service.verify_stadium(
         db=db, schema=StadiumVerificationUpdate(status=StadiumStatus.VERIFICATION), stadium_id=stadium_id, user=user)
 
 
-@stadium_router.patch('/approve/{stadium_id}', response_model=StadiumsRead)
+@stadium_router.patch('/approve/{stadium_id}')
 @sentry_capture_exceptions
 async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdate, db: TransactionSessionDep,
-                               user: SuperUser):
+                               user: SuperUser)->Msg:
     """
     Одобрение верификации стадиона администратором.
 
@@ -88,7 +95,7 @@ async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdat
     :param schema: Данные для верификации (статус: "Added", "Rejected" или "Needs_revision")
     :return: Стадион с обновленным статусом
     """
-    return await service_factory.stadium_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
+    return await service_factory.stadium_verif_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
 
 
 @stadium_router.put("/upload/{stadium_id}", response_model=dict)
@@ -104,7 +111,7 @@ async def upload_image_stadium(db: TransactionSessionDep, stadium_id: int, user:
     :param file: Загружаемое изображение
     :return: Результат операции в виде словаря
     """
-    return await service_factory.stadium_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
+    return await service_factory.stadium_image_service.upload_image(db=db, stadium_id=stadium_id, user=user, file=file)
 
 
 @stadium_router.get('/all', response_model=List[StadiumsRead])
@@ -166,22 +173,16 @@ async def add_facility_to_stadium(db: TransactionSessionDep, stadium_id: int, sc
     :param schema: Список услуг для добавления
     :return: Список добавленных услуг
     """
-    return await service_factory.stadium_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
+    return await service_factory.stadium_facility_service.add_facility_stadium(db=db, stadium_id=stadium_id, facility_schema=schema, user=user)
 
 
-@stadium_router.delete("/delete-service", response_model=dict)
+@stadium_router.delete("/del-service/{stadium_id}/{facility_id}")
 @sentry_capture_exceptions
-async def stadium_delete_facility(db: TransactionSessionDep, schema: StadiumFacilityDelete, user: CurrentUser):
+async def stadium_delete_facility(db: TransactionSessionDep, current_user: CurrentUser, facility_id:int, stadium_id: int) -> Msg:
     """
     Удаление услуги у стадиона.
-
-    :param db: Сессия базы данных
-    :param user: Данные текущего пользователя
-    :param schema: Данные для удаления (идентификаторы стадиона и услуги)
-    :return: Результат операции в виде словаря
     """
-    return await service_factory.stadium_service.delete_facility_from_stadium(db, schema=schema, user=user)
-
+    return await service_factory.stadium_facility_service.delete_facility_from_stadium(db,facility_id=facility_id, stadium_id=stadium_id, user=current_user)
 
 @stadium_router.get('/search', response_model=List[StadiumsRead])
 @sentry_capture_exceptions
@@ -210,11 +211,11 @@ async def create_price_intervals(db: TransactionSessionDep, stadium_id:int,  cur
     :param schema: Валидированные данные для создания интервалов
     :return: Созданный стадион в формате StadiumsRead
     """
-    return await service_factory.stadium_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
+    return await service_factory.stadium_intervals_service.create_price_intervals(db=db, stadium_id=stadium_id, schema=schema, user=current_user)
 
 @stadium_router.delete("/del-intervals/{stadium_id}/{interval_id}")
 @sentry_capture_exceptions
-async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser,interval_id:int, stadium_id: int) -> Msg:
+async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser, interval_id:int, stadium_id: int) -> Msg:
     """
     Удаление ценового интервала стадиона по идентификатору.
 
@@ -223,4 +224,4 @@ async def delete_intervals(db: TransactionSessionDep, current_user: CurrentUser,
     :param stadium_id: Идентификатор стадиона для удаления
     :return: Сообщение о результате операции
     """
-    return await service_factory.stadium_service.delete_price_interval(db,interval_id=interval_id, stadium_id=stadium_id, user=current_user)
+    return await service_factory.stadium_intervals_service.delete_price_interval(db,interval_id=interval_id, stadium_id=stadium_id, user=current_user)
