@@ -29,6 +29,7 @@ from backend.app.services.image.image_service import CloudinaryImageHandler
 from backend.app.services.redis import RedisClient
 from backend.app.services.review.review_service import ReviewService
 from backend.app.services.stadium.stadium_service import StadiumService
+from backend.app.services.stadium.stadium_verif_service import StadiumVerifService
 
 
 class ServiceFactory:
@@ -51,12 +52,16 @@ class ServiceFactory:
 
         # Лениво инициализируемые сервисы
         self._review_service = None
-        self._stadium_service = None
+
         self._facility_service = None
         self._booking_service = None
         self._user_auth = None
         self._registration_service = None
         self._user_service = None
+
+        self._stadium_service = None
+        self._stadium_verif_service = None
+
 
     def get_image_handler(self, model_type: Type[SQLModel]) -> CloudinaryImageHandler:
         if model_type not in self._image_handlers:
@@ -135,6 +140,16 @@ class ServiceFactory:
                 image_handler=self.get_image_handler(Stadium)
             )
         return self._stadium_service
+
+    @property
+    def stadium_verif_service(self) -> StadiumVerifService:
+        if self._stadium_verif_service is None:
+            self._stadium_verif_service = StadiumVerifService(
+                stadium_repository=self._stadium_repo,
+                permission=self._permission_service,
+                redis=self._redis_client
+            )
+        return self._stadium_verif_service
 
     @property
     def facility_service(self) -> FacilityService:

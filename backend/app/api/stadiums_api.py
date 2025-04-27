@@ -60,9 +60,9 @@ async def delete_stadium(db: TransactionSessionDep, current_user: CurrentUser, s
     return await service_factory.stadium_service.delete_stadium(db, stadium_id=stadium_id, user=current_user)
 
 
-@stadium_router.patch('/start-verification/{stadium_id}', response_model=StadiumsRead)
+@stadium_router.patch('/start-verification/{stadium_id}')
 @sentry_capture_exceptions
-async def start_verification(stadium_id: int, db: TransactionSessionDep, user: CurrentUser):
+async def start_verification(stadium_id: int, db: TransactionSessionDep, user: CurrentUser) ->Msg:
     """
     Запуск процесса верификации стадиона.
 
@@ -71,14 +71,14 @@ async def start_verification(stadium_id: int, db: TransactionSessionDep, user: C
     :param stadium_id: Идентификатор стадиона для верификации
     :return: Стадион с обновленным статусом "Верификация"
     """
-    return await service_factory.stadium_service.verify_stadium(
+    return await service_factory.stadium_verif_service.verify_stadium(
         db=db, schema=StadiumVerificationUpdate(status=StadiumStatus.VERIFICATION), stadium_id=stadium_id, user=user)
 
 
-@stadium_router.patch('/approve/{stadium_id}', response_model=StadiumsRead)
+@stadium_router.patch('/approve/{stadium_id}')
 @sentry_capture_exceptions
 async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdate, db: TransactionSessionDep,
-                               user: SuperUser):
+                               user: SuperUser)->Msg:
     """
     Одобрение верификации стадиона администратором.
 
@@ -88,7 +88,7 @@ async def approve_verification(stadium_id: int, schema: StadiumVerificationUpdat
     :param schema: Данные для верификации (статус: "Added", "Rejected" или "Needs_revision")
     :return: Стадион с обновленным статусом
     """
-    return await service_factory.stadium_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
+    return await service_factory.stadium_verif_service.approve_verification_by_admin(db=db, schema=schema, stadium_id=stadium_id, user=user)
 
 
 @stadium_router.put("/upload/{stadium_id}", response_model=dict)

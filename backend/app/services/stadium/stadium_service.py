@@ -4,11 +4,10 @@ from typing import List
 
 import sentry_sdk
 from fastapi import HTTPException, UploadFile, File
-from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
-from sqlmodel import select, and_
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from watchfiles import awatch
+
 
 from backend.app.interface.utils.i_image_handler import ImageHandler
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
@@ -19,10 +18,9 @@ from backend.app.models.auth import Msg
 from backend.app.models.base_model_public import AdditionalFacilityReadBase
 from backend.app.models.stadium_reviews import StadiumReview
 
-from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus, StadiumCreate, StadiumsUpdate, \
+from backend.app.models.stadiums import  StadiumStatus, StadiumCreate, StadiumsUpdate, \
     StadiumsRead, Stadium, StadiumsReadWithFacility, StadiumFacilityCreate, PaginatedStadiumsResponse, PriceInterval, \
-    StadiumCreateWithInterval, PriceIntervalCreate, StadiumPriceIntervalDel
-from backend.app.services import stadium
+    StadiumCreateWithInterval, PriceIntervalCreate
 
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
@@ -143,41 +141,6 @@ class StadiumService:
             await self.redis.invalidate_cache("stadiums:all_active", f"Удаление стадиона {stadium_id}")
         logger.info(f"Стадион {stadium_id} удален пользователем {user.id}")
         return Msg(msg="Стадион удален успешно")
-
-    @HttpExceptionWrapper
-    async def verify_stadium(self, db: AsyncSession, schema: StadiumVerificationUpdate, stadium_id: int, user: User):
-        """
-        Верифицирует стадион.
-        """
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
-        self.permission.check_owner_or_admin(current_user=user, model=stadium)
-        if stadium.status == StadiumStatus.VERIFICATION:
-            raise HTTPException(status_code=400,
-                                detail="вы не можете изменить объект, пока у него статус 'На верификации'")
-
-        await self.stadium_repository.update(db=db, model=stadium, schema=schema.model_dump(exclude_unset=True))
-        logger.info(f"Cтадион {stadium_id} отправлен на верификацию пользователем {user.id}")
-        await self.redis.invalidate_cache(f"stadiums:vendor:{user.id}", f"Обновление стадиона {stadium_id}")
-        return stadium
-
-    @HttpExceptionWrapper
-    async def approve_verification_by_admin(self, db: AsyncSession, schema: StadiumVerificationUpdate, stadium_id: int,
-                                            user: User):
-        """
-        Подтверждает верификацию стадиона администратором.
-        """
-
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
-        is_active = schema.status == StadiumStatus.ADDED
-        schema.is_active = is_active
-        await self.stadium_repository.update(db=db, model=stadium, schema=schema.model_dump(exclude_unset=True))
-        logger.info(f"Верификация стадиона {stadium_id} подтверждена администратором {user.id}")
-        if schema.is_active:
-            await self.redis.invalidate_cache("stadiums:all_active",
-                                              f"Кеш для всех активных стадионов инвалидирован из-за подтверждения "
-                                              f"верификации стадиона {stadium_id}")
-        await self.redis.invalidate_cache(f"stadiums:vendor:{user.id}", f"Обновление стадиона {stadium_id}")
-        return stadium
 
     @HttpExceptionWrapper
     async def upload_image(self, db: AsyncSession, stadium_id: int, user: User, file: UploadFile = File(...)):
