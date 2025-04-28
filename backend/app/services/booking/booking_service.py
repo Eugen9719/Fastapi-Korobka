@@ -50,7 +50,13 @@ class BookingService:
         await self._check_overlapping_booking(db, schema.stadium_id, schema.start_time, schema.end_time)
 
         # 2. Получаем и проверяем стадион
-        stadium = await self.stadium_repository.get_or_404(db, schema.stadium_id)
+
+        stadium = await self.stadium_repository.get_or_404(
+            db,
+            schema.stadium_id,
+            options=[selectinload(Stadium.price_intervals)]
+        )
+
         if not stadium.is_active:
             raise HTTPException(status_code=400, detail="Этот стадион не активен для бронирования")
 
@@ -96,7 +102,7 @@ class BookingService:
     @HttpExceptionWrapper
     async def create_payment_session(self, db: AsyncSession, booking_id: int, success_url: str, cancel_url: str):
         booking = await self.booking_repository.get_or_404(db=db,
-                                                           id=booking_id,
+                                                           object_id=booking_id,
                                                            options=[selectinload(Booking.stadium),
                                                                     selectinload(Booking.booking_facility).selectinload(
                                                                         BookingFacility.facility)])
@@ -166,7 +172,7 @@ class BookingService:
 
     @HttpExceptionWrapper
     async def get_booking(self, db: AsyncSession, booking_id: int, ):
-        return await self.booking_repository.get_or_404(db=db, id=booking_id, options=[selectinload(Booking.stadium),
+        return await self.booking_repository.get_or_404(db=db, object_id=booking_id, options=[selectinload(Booking.stadium),
                                                                                        selectinload(Booking.user)])
 
     @HttpExceptionWrapper
@@ -192,7 +198,7 @@ class BookingService:
 
     @HttpExceptionWrapper
     async def delete_booking(self, db: AsyncSession, user: User, booking_id: int):
-        booking = await self.booking_repository.get_or_404(db=db, id=booking_id)
+        booking = await self.booking_repository.get_or_404(db=db, object_id=booking_id)
         if not booking.status == StatusBooking.PENDING:
             raise HTTPException(status_code=400, detail="Удалять бронирования можно только со статусом 'Pending'")
 

@@ -30,7 +30,7 @@ class StadiumImageService:
         Загружает изображение для стадиона.
         """
 
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         if stadium.status == StadiumStatus.VERIFICATION:
             raise HTTPException(status_code=400,
                                 detail="вы не можете изменить объект, пока у него статус 'На верификации")

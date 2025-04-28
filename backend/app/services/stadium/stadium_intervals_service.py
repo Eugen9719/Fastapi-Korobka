@@ -24,7 +24,7 @@ class StadiumIntervalsService:
     @HttpExceptionWrapper
     async def create_price_intervals(self, db: AsyncSession, schema: List[PriceIntervalCreate], stadium_id: int,
                                      user: User):
-        update_stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        update_stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         self.permission.check_owner_or_admin(current_user=user, model=update_stadium)
         if update_stadium.status == StadiumStatus.VERIFICATION:
             raise HTTPException(status_code=400,
@@ -38,7 +38,7 @@ class StadiumIntervalsService:
         Удаляет ценовой интервал стадиона.
         """
 
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         self.permission.check_owner_or_admin(current_user=user, model=stadium)
 
         was_active = stadium.is_active

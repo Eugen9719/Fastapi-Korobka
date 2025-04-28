@@ -36,7 +36,7 @@ class RegistrationService:
         if not verify:
             raise HTTPException(status_code=404, detail="Verification failed")
 
-        user = await self.user_repository.get_or_404(db=db, id=verify.user_id)
+        user = await self.user_repository.get_or_404(db=db, object_id=verify.user_id)
         update_data = {"is_active": True}
         user_update_schema = UserUpdateActive(**update_data)
         await self.user_repository.update(db, model=user, schema=user_update_schema.model_dump(exclude_unset=True))

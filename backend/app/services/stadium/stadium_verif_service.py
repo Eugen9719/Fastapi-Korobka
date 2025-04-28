@@ -25,7 +25,7 @@ class StadiumVerifService:
         """
             Верифицирует стадион.
         """
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         self.permission.check_owner_or_admin(current_user=user, model=stadium)
         if stadium.status == StadiumStatus.VERIFICATION:
             raise HTTPException(status_code=400,
@@ -43,7 +43,7 @@ class StadiumVerifService:
         Подтверждает верификацию стадиона администратором.
         """
 
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         is_active = schema.status == StadiumStatus.ADDED
         schema.is_active = is_active
         await self.stadium_repository.update(db=db, model=stadium, schema=schema.model_dump(exclude_unset=True))

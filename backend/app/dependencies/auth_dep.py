@@ -34,7 +34,7 @@ async def get_current_user(db: SessionDep, token: TokenDep) -> User:
         token_data = TokenPayload(**payload)
     except PyJWTError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Could not validate credentials")
-    user = await service_factory.user_repo.get_or_404(db=db, id=token_data.sub)
+    user = await service_factory.user_repo.get_or_404(db=db, object_id=token_data.sub)
     return user
 
 

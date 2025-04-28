@@ -14,7 +14,7 @@ UpdateType = TypeVar("UpdateType", bound=SQLModel)
 # Базовый доступ (по id и по фильтрам)
 class IReadRepository(ABC, Generic[ModelType]):
     @abstractmethod
-    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None) -> ModelType:
+    async def get_or_404(self, db: AsyncSession, object_id: int, options: Optional[list[Any]] = None) -> ModelType:
         pass
 
     @abstractmethod

@@ -1,10 +1,7 @@
 import logging
 from typing import List, Optional
-
-from fastapi import HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from backend.app.interface.base.i_base_repo import CreateType, ModelType
 from backend.app.interface.repositories.i_facility_repo import IFacilityRepository
 from backend.app.models.additional_facility import AdditionalFacility, FacilityCreate, FacilityUpdate

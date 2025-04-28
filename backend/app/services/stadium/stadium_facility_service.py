@@ -24,7 +24,7 @@ class StadiumFacilityService:
     async def add_facility_stadium(self, db: AsyncSession, stadium_id: int,
                                    facility_schema: List[StadiumFacilityCreate], user: User):
 
-        stadium = await self.stadium_repository.get_or_404(db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db, object_id=stadium_id)
         self.permission.check_owner_or_admin(user, stadium)
 
         added = 0
@@ -54,7 +54,7 @@ class StadiumFacilityService:
         """
 
         # 1. Проверка прав доступа
-        stadium = await self.stadium_repository.get_or_404(db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db, object_id=stadium_id)
         self.permission.check_owner_or_admin(user, stadium)
 
         deleted_facility_id = await self.stadium_repository.delete_relation(db=db, model=StadiumFacility,
