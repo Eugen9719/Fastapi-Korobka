@@ -113,11 +113,11 @@ class StadiumRepository(IStadiumRepository, AsyncBaseRepository[Stadium, Stadium
     ):
         await self.check_time(start_time, end_time)
 
-        if await self.check_intersection(db, stadium_id, start_time, end_time):
-            raise HTTPException(
-                status_code=400,
-                detail="Ценовой интервал пересекается с существующим."
-            )
+        # if await self.check_intersection(db, stadium_id, start_time, end_time):
+        #     raise HTTPException(
+        #         status_code=400,
+        #         detail="Ценовой интервал пересекается с существующим."
+        #     )
 
     async def add_price_intervals(
             self,

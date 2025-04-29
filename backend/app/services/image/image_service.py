@@ -11,7 +11,7 @@ class CloudinaryImageHandler(ImageHandler):
     def __init__(self, model: type[ModelType]):
         self.model = model
 
-    async def upload_image(self, db: AsyncSession, instance: ModelType, file: UploadFile) -> dict:
+    async def upload_image(self, db: AsyncSession, instance: ModelType, file: UploadFile) -> dict|None:
 
         if not file.content_type.startswith("image/"):
             raise HTTPException(400, "File must be an image")

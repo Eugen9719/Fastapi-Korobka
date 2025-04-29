@@ -104,4 +104,4 @@ async def read_user_by_id(user_id: int, db: SessionDep, user: SuperUser) -> Any:
     :return: Публичные данные пользователя
     :raises HTTPException: 404 если пользователь не найден
     """
-    return await service_factory.user_repo.get_or_404(db, id=user_id)
+    return await service_factory.user_repo.get_or_404(db, object_id=user_id)

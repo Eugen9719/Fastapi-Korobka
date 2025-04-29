@@ -24,7 +24,7 @@ class ReviewService:
 
     @HttpExceptionWrapper
     async def create_review(self, db: AsyncSession, schema: CreateReview, stadium_id: int, user: User):
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         if await self.review_repository.check_duplicate_review(db=db, user_id=user.id, stadium_id=stadium_id):
             raise HTTPException(status_code=400, detail="Вы уже оставили отзыв для этого стадиона")
         review = await self.review_repository.create(db=db, schema=schema, stadium_id=stadium.id, user_id=user.id)
@@ -33,7 +33,7 @@ class ReviewService:
 
     @HttpExceptionWrapper
     async def update_review(self, db: AsyncSession, schema: UpdateReview, review_id: int, user: User):
-        review = await self.review_repository.get_or_404(db=db, id=review_id)
+        review = await self.review_repository.get_or_404(db=db, object_id=review_id)
         self.permission.check_owner_or_admin(current_user=user, model=review)
         review = await self.review_repository.update(db=db, model=review, schema=schema)
         logger.info(f"отзыв {review_id} успешно обновлен пользователем {user.id}")
@@ -41,7 +41,7 @@ class ReviewService:
 
     @HttpExceptionWrapper
     async def delete_review(self, db: AsyncSession, user: User, review_id: int):
-        review = await self.review_repository.get_or_404(db=db, id=review_id)
+        review = await self.review_repository.get_or_404(db=db, object_id=review_id)
         self.permission.check_owner_or_admin(current_user=user, model=review)
         await self.review_repository.remove(db=db, id=review.id)
         logger.info(f"отзыв {review_id} успешно удален пользователем {user.id}")

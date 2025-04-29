@@ -1,9 +1,7 @@
-from datetime import datetime
-from decimal import Decimal
-
+import logging
+from datetime import datetime, timedelta
 import stripe
 from fastapi import HTTPException
-
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -13,10 +11,12 @@ from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from backend.app.models import User, Stadium
 from backend.app.models.bookings import BookingCreate, StatusBooking, Booking, BookingFacility, \
     PaginatedBookingsResponse
-
 from backend.app.repositories.facility_repository import FacilityRepository
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class BookingService:
@@ -37,12 +37,47 @@ class BookingService:
             raise HTTPException(status_code=400, detail="Этот промежуток времени уже забронирован.")
 
     @staticmethod
-    def _calculate_price(price_per_hour: Decimal, start_time: datetime, end_time: datetime) -> float:
-        if start_time >= end_time:
-            raise HTTPException(status_code=400, detail="End time must be greater than start time.")
+    def _calculate_price(stadium: Stadium, start_time: datetime, end_time: datetime):
 
-        duration = Decimal((end_time - start_time).total_seconds()) / Decimal(3600)  # Время в часах
-        return float(duration * price_per_hour)
+        if start_time >= end_time:
+            raise HTTPException(
+                status_code=400,
+                detail="Время окончания должно быть больше времени начала."
+            )
+
+        total = 0
+        current = start_time
+        day_of_week = start_time.weekday()  # 0=понедельник, 6=воскресенье
+
+        while current < end_time:
+            segment_end = min(current + timedelta(minutes=30), end_time)
+            segment_start_time = current.time()
+            segment_end_time = segment_end.time()
+
+            # Ищем подходящий интервал (сначала для дня недели, потом общий)
+            price = None
+            for interval in stadium.price_intervals:
+                if ((interval.day_of_week == day_of_week or interval.day_of_week is None)
+                        and segment_start_time < interval.end_time
+                        and segment_end_time > interval.start_time
+                ):
+                    price = interval.price
+                    # Приоритет у интервалов с указанным днём недели
+                    if interval.day_of_week == day_of_week:
+                        break
+
+            # Если интервал не найден, используем стандартную цену
+            if price is None:
+                price = stadium.default_price
+
+            total += price
+            current = segment_end
+
+            # Обновляем день недели, если текущее время перешло на следующий день
+            if segment_end.day > current.day:
+                day_of_week = segment_end.weekday()
+
+        return total
 
     @HttpExceptionWrapper
     async def create_booking(self, db: AsyncSession, schema: BookingCreate, user: User):
@@ -50,7 +85,13 @@ class BookingService:
         await self._check_overlapping_booking(db, schema.stadium_id, schema.start_time, schema.end_time)
 
         # 2. Получаем и проверяем стадион
-        stadium = await self.stadium_repository.get_or_404(db, schema.stadium_id)
+
+        stadium = await self.stadium_repository.get_or_404(
+            db,
+            schema.stadium_id,
+            options=[selectinload(Stadium.price_intervals)]  # type: ignore
+        )
+
         if not stadium.is_active:
             raise HTTPException(status_code=400, detail="Этот стадион не активен для бронирования")
 
@@ -71,7 +112,7 @@ class BookingService:
                 })
 
         # 4. Рассчитываем цену
-        booking_price = self._calculate_price(stadium.price, schema.start_time, schema.end_time)
+        booking_price = self._calculate_price(stadium, schema.start_time, schema.end_time)
         total_price = booking_price + sum(item['total'] for item in facilities_data)
 
         # 5. Подготавливаем данные для создания бронирования
@@ -95,11 +136,11 @@ class BookingService:
 
     @HttpExceptionWrapper
     async def create_payment_session(self, db: AsyncSession, booking_id: int, success_url: str, cancel_url: str):
-        booking = await self.booking_repository.get_or_404(db=db,
-                                                           id=booking_id,
-                                                           options=[selectinload(Booking.stadium),
-                                                                    selectinload(Booking.booking_facility).selectinload(
-                                                                        BookingFacility.facility)])
+        booking = await self.booking_repository.get_or_404(
+            db=db,
+            object_id=booking_id,
+            options=[selectinload(Booking.stadium),
+                     selectinload(Booking.booking_facility).selectinload(BookingFacility.facility)]) # type: ignore
 
         if booking.status != StatusBooking.PENDING:
             raise HTTPException(status_code=400, detail="Order must be pending to create a payment session.")
@@ -166,8 +207,9 @@ class BookingService:
 
     @HttpExceptionWrapper
     async def get_booking(self, db: AsyncSession, booking_id: int, ):
-        return await self.booking_repository.get_or_404(db=db, id=booking_id, options=[selectinload(Booking.stadium),
-                                                                                       selectinload(Booking.user)])
+        return await self.booking_repository.get_or_404(db=db, object_id=booking_id,
+                                                        options=[selectinload(Booking.stadium),
+                                                                 selectinload(Booking.user)])
 
     @HttpExceptionWrapper
     async def get_bookings_user(self, db: AsyncSession, user: User):
@@ -192,7 +234,7 @@ class BookingService:
 
     @HttpExceptionWrapper
     async def delete_booking(self, db: AsyncSession, user: User, booking_id: int):
-        booking = await self.booking_repository.get_or_404(db=db, id=booking_id)
+        booking = await self.booking_repository.get_or_404(db=db, object_id=booking_id)
         if not booking.status == StatusBooking.PENDING:
             raise HTTPException(status_code=400, detail="Удалять бронирования можно только со статусом 'Pending'")
 

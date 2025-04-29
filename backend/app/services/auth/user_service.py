@@ -72,7 +72,7 @@ class UserService:
     @HttpExceptionWrapper
     async def upload_image(self, db: AsyncSession, current_user: User, file: UploadFile = File(...)) -> dict:
         """Загрузка изображения для пользователя."""
-        user = await self.user_repository.get_or_404(db, id=current_user.id)
+        user = await self.user_repository.get_or_404(db, object_id=current_user.id)
         self.permission.check_owner_or_admin(current_user=current_user, model=user)
         await self.image_handler.delete_old_image(db, user)
         return await self.image_handler.upload_image(db, user, file)
@@ -80,7 +80,7 @@ class UserService:
     @HttpExceptionWrapper
     async def delete_user(self, db: AsyncSession, current_user: User, user_id: int) -> Msg:
         """Удаление пользователя с проверкой прав."""
-        target_user = await self.user_repository.get_or_404(db, id=user_id)
+        target_user = await self.user_repository.get_or_404(db, object_id=user_id)
         self.permission.check_delete_permission(current_user, target_user)
         await self.user_repository.remove(db=db, id=target_user.id)
         return Msg(msg="Пользователь удален успешно")

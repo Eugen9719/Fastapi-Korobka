@@ -28,8 +28,8 @@ class QueryMixin(
     def __init__(self, model: type[ModelType]):
         self.model = model
 
-    async def get_or_404(self, db: AsyncSession, id: int, options: Optional[list[Any]] = None):
-        query = select(self.model).where(id == self.model.id)
+    async def get_or_404(self, db: AsyncSession, object_id: int, options: Optional[list[Any]] = None):
+        query = select(self.model).where( self.model.id == object_id ) # type: ignore
         if options:
             query = query.options(*options)
         result = await db.execute(query)

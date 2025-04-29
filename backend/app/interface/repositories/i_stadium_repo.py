@@ -31,10 +31,6 @@ class IStadiumRepository(IReadRepository[Stadium], IPaginateRepository[Stadium],
         pass
 
     @abstractmethod
-    async def delete_service(self, db: AsyncSession, schema: StadiumFacilityDelete):
-        pass
-
-    @abstractmethod
     async def search_available_stadiums(self, db: AsyncSession, city: str, start_time: datetime, end_time: datetime):
         pass
 

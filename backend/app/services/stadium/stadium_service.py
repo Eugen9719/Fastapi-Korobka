@@ -69,7 +69,7 @@ class StadiumService:
         Обновляет данные стадиона.
         """
 
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         self.permission.check_owner_or_admin(current_user=user, model=stadium)
         if stadium.status == StadiumStatus.VERIFICATION:
             raise HTTPException(status_code=400,
@@ -97,7 +97,7 @@ class StadiumService:
         Удаляет стадион.
         """
 
-        stadium = await self.stadium_repository.get_or_404(db=db, id=stadium_id)
+        stadium = await self.stadium_repository.get_or_404(db=db, object_id=stadium_id)
         self.permission.check_owner_or_admin(current_user=user, model=stadium)
 
         was_active = stadium.is_active
@@ -163,7 +163,7 @@ class StadiumService:
         # Получаем стадион с загруженными связями
         stadium = await self.stadium_repository.get_or_404(
             db=db,
-            id=stadium_id,
+            object_id=stadium_id,
             options=[
                 selectinload(Stadium.stadium_reviews).selectinload(StadiumReview.user_review),
                 selectinload(Stadium.stadium_facility)

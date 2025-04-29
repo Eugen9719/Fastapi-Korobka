@@ -31,7 +31,7 @@ async def stripe_webhook(request: Request, db: SessionDep):
         session = event["data"]["object"]
         booking_id = session["metadata"]["booking_id"]
 
-        booking = await service_factory.booking_repo.get_or_404(db=db, id=int(booking_id))
+        booking = await service_factory.booking_repo.get_or_404(db=db, object_id=int(booking_id))
         if booking.status == StatusBooking.PENDING:
             booking.status = StatusBooking.COMPLETED
             booking.stripe_payment_intent_id = session.get("payment_intent")
