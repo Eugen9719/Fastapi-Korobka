@@ -1,13 +1,19 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+
+from fastapi import APIRouter, Depends, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
+
+
 from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import Token, Msg, VerificationOut
 from backend.app.models.users import UserCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core import security
+
 from backend.core.db import SessionDep, TransactionSessionDep
+from backend.core.oauth_config import oauth
 from backend.core.security import verify_refresh_token
+
 
 auth_router = APIRouter()
 
@@ -36,6 +42,27 @@ async def login_access_token(db: SessionDep, form_data: Annotated[OAuth2Password
         token_type="bearer"
     )
 
+
+from fastapi import Request, HTTPException
+import logging
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
+
+
+@auth_router.get("/login/google")
+async def login_google(request: Request):
+    try:
+        redirect_uri = request.url_for('auth_google')
+        return await oauth.google.authorize_redirect(request, redirect_uri=redirect_uri)
+    except Exception as e:
+        logger.error(f"Error in Google login redirect: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to initiate Google login")
+
+
+@auth_router.get("/google", name='auth_google')
+async def auth_google(request: Request, db: TransactionSessionDep):
+   return await service_factory.user_auth.google_authenticate(request=request, db=db)
 
 @auth_router.post("/refresh-token", response_model=Token)
 @sentry_capture_exceptions

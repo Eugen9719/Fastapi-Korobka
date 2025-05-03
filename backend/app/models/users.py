@@ -28,7 +28,7 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     is_active: bool = Field(default=False)
     is_superuser: bool = Field(default=False)
-    hashed_password: str
+    hashed_password: str = Field(nullable=True)
     last_login: Optional[datetime] = None
     image_url: Optional[str] = Field(default=None, max_length=500)
     status: StatusEnum = Field(default=StatusEnum.PLAYER)
@@ -46,6 +46,12 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=100)
     status: StatusEnum = Field(default=StatusEnum.PLAYER)
+
+
+class UserOauthCreate(UserBase):
+    is_active: Optional[bool]
+
+
 
 
 class UserUpdateActive(SQLModel):

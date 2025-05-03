@@ -70,6 +70,11 @@ class Settings(BaseSettings):
 
     password_reset_jwt_subject: str = 'present'
 
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+
+
+
 
 settings = Settings()
-print(settings.database_url)
+

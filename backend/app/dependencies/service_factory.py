@@ -18,6 +18,7 @@ from backend.app.repositories.stadiums_repositories import StadiumRepository
 from backend.app.repositories.user_repositories import UserRepository
 from backend.app.repositories.verification_repository import VerifyRepository
 from backend.app.services.auth.authentication import UserAuthentication
+from backend.app.services.auth.google_auth_service import GoogleAuthService
 from backend.app.services.auth.password_service import PasswordService
 from backend.app.services.auth.permission import PermissionService
 from backend.app.services.auth.registration_service import RegistrationService
@@ -53,14 +54,18 @@ class ServiceFactory:
         self._redis_client = RedisClient(redis_url)
         self._image_handlers: dict[Type[SQLModel], CloudinaryImageHandler] = {}
 
+
         # Лениво инициализируемые сервисы
         self._review_service = None
 
         self._facility_service = None
         self._booking_service = None
+
         self._user_auth = None
+        self._google_auth_service = None
         self._registration_service = None
         self._user_service = None
+
 
         self._stadium_service = None
         self._stadium_verif_service = None
@@ -159,13 +164,13 @@ class ServiceFactory:
 
     @property
     def stadium_intervals_service(self) -> StadiumIntervalsService:
-        if self._stadium_verif_service is None:
-            self._stadium_verif_service = StadiumIntervalsService(
+        if self._stadium_intervals_service is None:
+            self._stadium_intervals_service = StadiumIntervalsService(
                 stadium_repository=self._stadium_repo,
                 permission=self._permission_service,
                 redis=self._redis_client
             )
-        return self._stadium_verif_service
+        return self._stadium_intervals_service
 
     @property
     def stadium_facility_service(self) -> StadiumFacilityService:
@@ -212,11 +217,20 @@ class ServiceFactory:
 
     ################# User ####################
     @property
+    def google_service(self) -> GoogleAuthService:
+        if self._google_auth_service is None:
+            self._google_auth_service =GoogleAuthService(
+                user_repository=self._user_repo
+            )
+        return self._google_auth_service
+
+    @property
     def user_auth(self) -> UserAuthentication:
         if self._user_auth is None:
             self._user_auth = UserAuthentication(
                 pass_service=self._password_service,
-                user_repository=self._user_repo
+                user_repository=self._user_repo,
+                google_auth_service=self.google_service
             )
         return self._user_auth
 
