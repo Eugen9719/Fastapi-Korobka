@@ -16,6 +16,9 @@ COPY .env /app/.env
 COPY pytest.ini /app/pytest.ini
 COPY initial_data.py /app/initial_data.py
 
+RUN apt-get update && apt-get install -y tzdata
+ENV TZ=Europe/Moscow
+
 # Установим зависимости
 RUN pip install  -r requirements.txt
 

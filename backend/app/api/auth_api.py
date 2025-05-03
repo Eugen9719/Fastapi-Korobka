@@ -1,16 +1,19 @@
-from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Depends, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
+
 
 from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import Token, Msg, VerificationOut
 from backend.app.models.users import UserCreate
 from backend.app.services.decorators import sentry_capture_exceptions
 from backend.core import security
-from backend.core.config import settings
+
 from backend.core.db import SessionDep, TransactionSessionDep
+from backend.core.oauth_config import oauth
+from backend.core.security import verify_refresh_token
+
 
 auth_router = APIRouter()
 
@@ -33,12 +36,63 @@ async def login_access_token(db: SessionDep, form_data: Annotated[OAuth2Password
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
     service_factory.permission_service.verify_active(user)
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
-        access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        ), token_type="bearer"
+        access_token=security.create_access_token(user.id),
+        refresh_token=security.create_refresh_token(user.id),
+        token_type="bearer"
     )
+
+
+from fastapi import Request, HTTPException
+import logging
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
+
+
+@auth_router.get("/login/google")
+async def login_google(request: Request):
+    try:
+        redirect_uri = request.url_for('auth_google')
+        return await oauth.google.authorize_redirect(request, redirect_uri=redirect_uri)
+    except Exception as e:
+        logger.error(f"Error in Google login redirect: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to initiate Google login")
+
+
+@auth_router.get("/google", name='auth_google')
+async def auth_google(request: Request, db: TransactionSessionDep):
+   return await service_factory.user_auth.google_authenticate(request=request, db=db)
+
+@auth_router.post("/refresh-token", response_model=Token)
+@sentry_capture_exceptions
+async def refresh_token(db: SessionDep, refresh_token: str = Body(..., embed=True)):
+    """
+    Обновление access токена с помощью refresh токена
+
+    :param db: Сессия базы данных
+    :param refresh_token: Refresh токен
+    :return: Новая пара токенов
+    :raises HTTPException: 401 если токен невалиден
+    """
+    try:
+        payload = verify_refresh_token(refresh_token)
+        user_id = payload.get("sub")
+        user = await service_factory.user_service.get_or_404(db, object_id=user_id)
+        service_factory.permission_service.verify_active(user)
+        return Token(
+                access_token=security.create_access_token(user.id),
+                refresh_token=security.create_refresh_token(user.id),
+                token_type="bearer"
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials"
+        )
+
 
 
 @auth_router.post("/registration", response_model=Msg)

@@ -4,6 +4,8 @@ import sentry_sdk
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+
 from backend.app import routers
 from backend.app.dependencies.service_factory import service_factory
 
@@ -32,6 +34,7 @@ app = FastAPI(
 )
 
 
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 
 @app.on_event("startup")

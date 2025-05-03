@@ -10,7 +10,7 @@ from backend.app.models.auth import Msg
 from backend.app.models.users import UpdatePassword, UserUpdate
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.email.email_service import EmailService
-from backend.app.services.auth.permission import PermissionService
+from backend.app.services.utils_service.permission import PermissionService
 
 
 class UserService:

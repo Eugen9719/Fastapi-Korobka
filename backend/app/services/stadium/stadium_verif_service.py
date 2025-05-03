@@ -5,7 +5,7 @@ from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
 from backend.app.models import User
 from backend.app.models.auth import Msg
 from backend.app.models.stadiums import StadiumVerificationUpdate, StadiumStatus
-from backend.app.services.auth.permission import PermissionService
+from backend.app.services.utils_service.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.redis import RedisClient
 

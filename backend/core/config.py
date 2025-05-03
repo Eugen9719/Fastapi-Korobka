@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"  # Базовая строка API
     SECRET_KEY: str = ""  # Генерация случайного секретного ключа
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # Время жизни токена доступа (8 дней)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 60 * 24 * 7 # Время жизни токена доступа (7 дней)
     DOMAIN: str = "localhost"  # Домен приложения
     ENVIRONMENT: Literal["local", "test", "production"] = 'local'
     SERVER_HOST: str = 'http://127.0.0.1:8000'
@@ -69,6 +70,11 @@ class Settings(BaseSettings):
 
     password_reset_jwt_subject: str = 'present'
 
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+
+
+
 
 settings = Settings()
-print(settings.database_url)
+

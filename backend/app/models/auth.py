@@ -1,6 +1,7 @@
+from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
 from typing import Optional
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 
 class Verification(SQLModel, table=True):
@@ -10,25 +11,27 @@ class Verification(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
 
 
-class Token(SQLModel):
+class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
 
 
-class Msg(SQLModel):
+
+class Msg(BaseModel):
     msg: str
 
 
-class VerificationOut(SQLModel):
+class VerificationOut(BaseModel):
     link: str
 
 
-class VerificationCreate(SQLModel):
+class VerificationCreate(BaseModel):
     """"""
     user_id: int
 
 
-class TokenPayload(SQLModel):
+class TokenPayload(BaseModel):
     sub: int | None = None
 
 
