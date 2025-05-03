@@ -25,7 +25,7 @@ from backend.app.models.stadiums import (
     StadiumCreateWithInterval
 )
 
-from backend.app.services.auth.permission import PermissionService
+from backend.app.services.utils_service.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.app.services.redis import RedisClient
 

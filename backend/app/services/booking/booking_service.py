@@ -12,7 +12,7 @@ from backend.app.models import User, Stadium
 from backend.app.models.bookings import BookingCreate, StatusBooking, Booking, BookingFacility, \
     PaginatedBookingsResponse
 from backend.app.repositories.facility_repository import FacilityRepository
-from backend.app.services.auth.permission import PermissionService
+from backend.app.services.utils_service.permission import PermissionService
 from backend.app.services.decorators import HttpExceptionWrapper
 
 logger = logging.getLogger(__name__)

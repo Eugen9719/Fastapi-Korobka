@@ -19,10 +19,10 @@ from backend.app.repositories.user_repositories import UserRepository
 from backend.app.repositories.verification_repository import VerifyRepository
 from backend.app.services.auth.authentication import UserAuthentication
 from backend.app.services.auth.google_auth_service import GoogleAuthService
-from backend.app.services.auth.password_service import PasswordService
-from backend.app.services.auth.permission import PermissionService
-from backend.app.services.auth.registration_service import RegistrationService
-from backend.app.services.auth.user_service import UserService
+from backend.app.services.utils_service.password_service import PasswordService
+from backend.app.services.utils_service.permission import PermissionService
+from backend.app.services.user.registration_service import RegistrationService
+from backend.app.services.user.user_service import UserService
 from backend.app.services.booking.booking_service import BookingService
 from backend.app.services.email.email_service import EmailService
 from backend.app.services.facility.facility_service import FacilityService
@@ -57,7 +57,6 @@ class ServiceFactory:
 
         # Лениво инициализируемые сервисы
         self._review_service = None
-
         self._facility_service = None
         self._booking_service = None
 
@@ -174,8 +173,8 @@ class ServiceFactory:
 
     @property
     def stadium_facility_service(self) -> StadiumFacilityService:
-        if self._stadium_verif_service is None:
-            self._stadium_verif_service = StadiumFacilityService(
+        if self._stadium_facility_service is None:
+            self._stadium_facility_service = StadiumFacilityService(
                 stadium_repository=self._stadium_repo,
                 permission=self._permission_service,
                 redis=self._redis_client
@@ -184,8 +183,8 @@ class ServiceFactory:
 
     @property
     def stadium_image_service(self) -> StadiumImageService:
-        if self._stadium_service is None:
-            self._stadium_service = StadiumImageService(
+        if self._stadium_image_service is None:
+            self._stadium_image_service = StadiumImageService(
                 stadium_repository=self._stadium_repo,
                 permission=self._permission_service,
                 redis=self._redis_client,

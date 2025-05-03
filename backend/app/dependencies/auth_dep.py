@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, status
 from backend.app.dependencies.service_factory import service_factory
 from backend.app.models.auth import TokenPayload
 from backend.app.models.users import User
-from backend.app.services.auth.permission import PermissionService
+from backend.app.services.utils_service.permission import PermissionService
 
 from backend.core.config import settings
 
