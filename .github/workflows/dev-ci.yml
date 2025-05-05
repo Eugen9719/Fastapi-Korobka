@@ -1,9 +1,9 @@
-name: Run Tests, Build and Push Docker Image
+name: Run Tests, Build
 
 on:
   push:
     branches:
-      - main
+      - dev
 
 env:
   POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
