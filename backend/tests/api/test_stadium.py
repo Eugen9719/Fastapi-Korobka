@@ -2,8 +2,24 @@ import pytest
 from backend.core.config import settings
 from backend.tests.utils.utils import get_token_header
 
-new_load_data = {"name": "string", "slug": "donbasssss", "address": "string", "description": "string",
-                 "additional_info": "string", "price": 1, "country": "string", "city": "string"}
+new_load_data = {
+  "name": "string",
+  "slug": "string",
+  "address": "string",
+  "description": "string",
+  "additional_info": "string",
+  "country": "string",
+  "city": "string",
+  "default_price": 0,
+  "price_intervals": [
+    {
+      "start_time": "11:04:19.388Z",
+      "end_time": "12:04:19.388Z",
+      "price": 0,
+      "day_of_week": 0
+    }
+  ]
+}
 
 
 @pytest.mark.anyio
@@ -28,8 +44,8 @@ class TestStadiumApi:
         assert response.status_code == status
 
     @pytest.mark.parametrize("user_id,stadium_id, status, detail, data", [
-        (1, 1, 200, None, {"name": "string", "slug": "string", "address": "string", "description": "string",
-                           "additional_info": "string", "price": 1, "country": "string", "city": "string"}),
+        (1, 1, 200, None, {"name": "string", "slug": "stringjl", "address": "string", "description": "string",
+                           "additional_info": "string", "default_price": 1, "country": "string", "city": "string"}),
 
     ])
     async def test_update_stadium(self, db, client, user_id, stadium_id, status, detail, data):

@@ -144,6 +144,7 @@ class StadiumCreate(SQLModel):
 
 class StadiumsUpdate(StadiumsBase):
     is_active: bool = False
+    default_price: Decimal
 
 
 class StadiumVerificationUpdate(SQLModel):

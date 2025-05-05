@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     UPLOAD_DIRECTORY: str = "static/img"
 
     PROJECT_NAME: str = "KOROBKA API"
-    POSTGRES_SERVER: str = ""
+    POSTGRES_SERVER: str =""
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
@@ -32,17 +32,12 @@ class Settings(BaseSettings):
 
     TEST_POSTGRES_DB: str = ""
 
-
     @property
     def database_url(self):
-        if self.ENVIRONMENT == "test":
-            return (
-                f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-                f"@localhost:{self.POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
-            )
+        host = "localhost" if self.ENVIRONMENT == "test" else "postgres"
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@db:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            f"@{host}:{self.POSTGRES_PORT}/{self.TEST_POSTGRES_DB if self.ENVIRONMENT == 'test' else self.POSTGRES_DB}"
         )
 
     SMTP_TLS: bool = True

@@ -12,7 +12,6 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 COPY backend /app/backend
 COPY static /app/static
-COPY .env /app/.env
 COPY pytest.ini /app/pytest.ini
 COPY initial_data.py /app/initial_data.py
 

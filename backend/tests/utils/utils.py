@@ -24,7 +24,7 @@ def random_email() -> str:
 
 
 def get_token_header(user_id:int):
-    token = security.create_access_token(user_id, expires_delta=timedelta(minutes=10))
+    token = security.create_access_token(user_id)
     return {"Authorization": f"Bearer {str(token)}"}
 
 def open_json(model: str):

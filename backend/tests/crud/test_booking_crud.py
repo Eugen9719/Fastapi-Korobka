@@ -16,12 +16,12 @@ class TestCrudBooking:
         (None, 200, None, 1, "2024-12-08 14:00:00", "2024-12-08 16:00:00", 2),
         (HTTPException, 400, {"detail": "Этот промежуток времени уже забронирован."}, 2, "2024-08-04T09:33:00", "2024-08-04T15:33:00", 2),
         (HTTPException, 400, {"detail": "Этот стадион не активен для бронирования"}, 2, "2024-12-08 10:00:00", "2024-12-08 11:00:00", 1),
-        (HTTPException, 400, {"detail": "End time must be greater than start time."}, 2, "2024-12-08 14:00:00", "2024-11-08 14:00:00",
+        (HTTPException, 400, {"detail": "Время окончания должно быть больше времени начала."}, 2, "2024-12-08 14:00:00", "2024-11-08 14:00:00",
          2),
     ])
     async def test_create_booking(self, db: AsyncSession, expected_exception, status_code, detail, user_id, start_time, end_time, stadium_id):
 
-        user = await service_factory.user_repo.get_or_404(db=db, id=user_id)
+        user = await service_factory.user_repo.get_or_404(db=db, object_id=user_id)
         create_schema = BookingCreate(
             start_time=start_time,
             end_time=end_time,
@@ -37,12 +37,12 @@ class TestCrudBooking:
             await service_factory.booking_service.create_booking(db=db, schema=create_schema, user=user)
 
     async def test_delete_booking(self, db: AsyncSession, ):
-        user = await service_factory.user_repo.get_or_404(db=db, id=4)
+        user = await service_factory.user_repo.get_or_404(db=db, object_id=4)
         response = await service_factory.booking_service.delete_booking(db, booking_id=3, user=user)
         # Проверяем результат
         assert response["msg"] == "Бронирование и связанные услуги успешно удалены"
 
         # Проверяем, что стадион больше не существует в базе
         with pytest.raises(HTTPException) as exc_info:
-            await service_factory.booking_repo.get_or_404(db=db, id=3)
+            await service_factory.booking_repo.get_or_404(db=db, object_id=3)
         assert exc_info.value.status_code == 404

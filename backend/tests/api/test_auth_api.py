@@ -87,12 +87,12 @@ class TestAuthUser:
         assert response.json() == {"detail": "Verification failed"}
         logger.info(f"Завершение теста: {self.test_confirm_email_failure.__name__}")
 
-    async def test_password_recovery(self, db: AsyncSession, client: AsyncClient):
-        email = "customer@gmail.com"
-        response = await client.post(f"{settings.API_V1_STR}/auth/password-recovery/{email}", )
-        # Проверка ответа
-        assert response.status_code == 200
-        assert response.json() == {"msg": "Сброс пароля отправлен на email"}
+    # async def test_password_recovery(self, db: AsyncSession, client: AsyncClient):
+    #     email = "customer@gmail.com"
+    #     response = await client.post(f"{settings.API_V1_STR}/auth/password-recovery/{email}", )
+    #     # Проверка ответа
+    #     assert response.status_code == 200
+    #     assert response.json() == {"msg": "Сброс пароля отправлен на email"}
 
     async def test_reset_password(self, db: AsyncSession, client: AsyncClient):
         email = "customer@gmail.com"

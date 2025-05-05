@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:14
+    container_name: korobka_db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d # Подключение скриптов для инициализации
+    restart: unless-stopped
+    networks:
+      - app-network
+
+
+
+  fastapi:
+    build: ./
+    container_name: backend
+    depends_on:
+      - postgres
+      - redis
+    command: bash -c 'while !</dev/tcp/postgres/5432; do sleep 1; done; alembic upgrade head  && uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000'
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge

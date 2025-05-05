@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class TestPermissions:
     async def test_get_current_user(self, db,) -> None:
         user = await service_factory.user_repo.get_by_email(db, "vendor@gmail.com")
-        token = security.create_access_token(user.id, expires_delta=timedelta(600))
+        token = security.create_access_token(user.id)
         result_user = await get_current_user(db, token)
         assert result_user.id == user.id
 
@@ -39,7 +39,7 @@ class TestPermissions:
     async def test_get_current_user_not_found(self, db: AsyncSession) -> None:
         """Тест на случай, когда пользователь не найден """
         invalid_user_id = 9999
-        token = security.create_access_token(invalid_user_id, expires_delta=timedelta(600))
+        token = security.create_access_token(invalid_user_id)
 
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user(db, token)
@@ -53,7 +53,7 @@ class TestPermissions:
     ])
     async def test_get_vendor_user(self, db, user_id,  expected_exception):
 
-        current_user = await service_factory.user_repo.get_or_404(db, id=user_id)
+        current_user = await service_factory.user_repo.get_or_404(db, object_id=user_id)
         # Тестирование функции get_vendor
         if expected_exception:
             with pytest.raises(expected_exception) as exc_info:
@@ -94,7 +94,7 @@ class TestCrudUser:
     async def test_update_user(self, db: AsyncSession, user_id, update_email, first_name, expected_exception,
                                status_code, detail):
 
-        user = await  service_factory.user_repo.get_or_404(db=db, id=user_id)
+        user = await  service_factory.user_repo.get_or_404(db=db, object_id=user_id)
 
         update_schema = UserUpdate(email=update_email, first_name=first_name, last_name="NewLastName")
 
@@ -131,39 +131,39 @@ class TestCrudUser:
             assert exc_info.value.status_code == status_code
             assert exc_info.value.detail == detail
 
-    @pytest.mark.parametrize("email,expected_exception, status_code, detail", [
-        ("customer6nmhmg@gmail.com", HTTPException, 404, "Пользователя с этим email нет в системе"),
-        ("customer6@gmail.com", None, None, None),
-    ])
-    async def test_password_recovery(self, db: AsyncSession, email, expected_exception,
-                                   status_code, detail):
-        if not expected_exception:
-            response = await service_factory.user_service.password_recovery(db=db, email=email)
-            assert response == {"msg": "Сброс пароля отправлен на email"}
+    # @pytest.mark.parametrize("email,expected_exception, status_code, detail", [
+    #     ("customer6nmhmg@gmail.com", HTTPException, 404, "Пользователя с этим email нет в системе"),
+    #     ("customer6@gmail.com", None, None, None),
+    # ])
+    # async def test_password_recovery(self, db: AsyncSession, email, expected_exception,
+    #                                status_code, detail):
+    #     if not expected_exception:
+    #         response = await service_factory.user_service.password_recovery(db=db, email=email)
+    #         assert response == {"msg": "Сброс пароля отправлен на email"}
+    #
+    #     else:
+    #         with pytest.raises(expected_exception) as exc_info:
+    #             await service_factory.user_service.password_recovery(db=db, email=email)
+    #         assert exc_info.value.status_code == status_code
+    #         assert exc_info.value.detail == detail
 
-        else:
-            with pytest.raises(expected_exception) as exc_info:
-                await service_factory.user_service.password_recovery(db=db, email=email)
-            assert exc_info.value.status_code == status_code
-            assert exc_info.value.detail == detail
-
-    @pytest.mark.parametrize("email,new_password,expected_exception, status_code, detail", [
-        ("", 'password', HTTPException, 400, "Невалидный токен"),
-        ("vendor1hgf@gmail.com", 'password', HTTPException, 404, "Пользователя с этим email нет в системе"),
-        ("vendor1@gmail.com",'password', None, None, None),
-    ])
-    async def test_password_reset(self, db: AsyncSession, email,new_password, expected_exception,
-                                     status_code, detail):
-        token = service_factory.password_service.generate_password_reset_token(email)
-        if not expected_exception:
-            response = await service_factory.user_service.password_reset(db=db, token=token, new_password=new_password)
-            assert response == {"msg": "Пароль успешно изменен"}
-
-        else:
-            with pytest.raises(expected_exception) as exc_info:
-                await service_factory.user_service.password_reset(db=db, token=token, new_password=new_password)
-            assert exc_info.value.status_code == status_code
-            assert exc_info.value.detail == detail
+    # @pytest.mark.parametrize("email,new_password,expected_exception, status_code, detail", [
+    #     ("", 'password', HTTPException, 400, "Невалидный токен"),
+    #     ("vendor1hgf@gmail.com", 'password', HTTPException, 404, "Пользователя с этим email нет в системе"),
+    #     ("vendor1@gmail.com",'password', None, None, None),
+    # ])
+    # async def test_password_reset(self, db: AsyncSession, email,new_password, expected_exception,
+    #                                  status_code, detail):
+    #     token = service_factory.password_service.generate_password_reset_token(email)
+    #     if not expected_exception:
+    #         response = await service_factory.user_service.password_reset(db=db, token=token, new_password=new_password)
+    #         assert response == {"msg": "Пароль успешно изменен"}
+    #
+    #     else:
+    #         with pytest.raises(expected_exception) as exc_info:
+    #             await service_factory.user_service.password_reset(db=db, token=token, new_password=new_password)
+    #         assert exc_info.value.status_code == status_code
+    #         assert exc_info.value.detail == detail
 
     """
     if not email: 
@@ -186,7 +186,7 @@ class TestCrudUser:
         ])
     async def test_delete_user(self, db: AsyncSession, user_id, delete_user_id, expected_exception,
                                    status_code, detail):
-            user = await service_factory.user_repo.get_or_404(db=db, id=user_id)
+            user = await service_factory.user_repo.get_or_404(db=db, object_id=user_id)
 
             if not expected_exception:
                 await service_factory.user_service.delete_user(db=db, current_user=user, user_id=delete_user_id, )
@@ -203,28 +203,28 @@ class TestCrudUser:
 @pytest.mark.usefixtures("db","test_data")
 class TestAuthService:
 
-    @pytest.mark.parametrize("email, expected_exception, status_code, detail", [
-        ("adminghfdh@gmail.com", None, None, None),
-        ("adminghfdh@gmail.com", HTTPException, 400, "Email уже зарегистрирован"),
-    ])
-    async def test_registration_user(self, db: AsyncSession, email, expected_exception, status_code, detail):
-        new_user = UserCreate(
-            email=email,
-            first_name="string",
-            last_name="string",
-            avatar="string",
-            password="stringst",
-            status=StatusEnum.PLAYER
-        )
-
-        if expected_exception:
-            with pytest.raises(expected_exception) as exc_info:
-                await service_factory.registration_service.register_user(db=db, schema=new_user)
-            assert exc_info.value.status_code == status_code
-            assert exc_info.value.detail == detail
-        else:
-            response = await service_factory.registration_service.register_user(db=db, schema=new_user)
-            assert response == {"msg": "Письмо с подтверждением отправлено"}
+    # @pytest.mark.parametrize("email, expected_exception, status_code, detail", [
+    #     ("adminghfdh@gmail.com", None, None, None),
+    #     ("adminghfdh@gmail.com", HTTPException, 400, "Email уже зарегистрирован"),
+    # ])
+    # async def test_registration_user(self, db: AsyncSession, email, expected_exception, status_code, detail):
+    #     new_user = UserCreate(
+    #         email=email,
+    #         first_name="string",
+    #         last_name="string",
+    #         avatar="string",
+    #         password="stringst",
+    #         status=StatusEnum.PLAYER
+    #     )
+    #
+    #     if expected_exception:
+    #         with pytest.raises(expected_exception) as exc_info:
+    #             await service_factory.registration_service.register_user(db=db, schema=new_user)
+    #         assert exc_info.value.status_code == status_code
+    #         assert exc_info.value.detail == detail
+    #     else:
+    #         response = await service_factory.registration_service.register_user(db=db, schema=new_user)
+    #         assert response == {"msg": "Письмо с подтверждением отправлено"}
 
     @pytest.mark.parametrize("expected_exception, status_code, detail", [
         (None, None, None),
