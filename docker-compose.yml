@@ -34,6 +34,17 @@ services:
     networks:
       - app-network
 
+  stripe-webhook:
+    image: stripe/stripe-cli
+    command: listen --forward-to http://backend:8000/api/v1/webhook/stripe
+    env_file:
+      - .env
+    depends_on:
+      - fastapi
+    volumes:
+      - ~/.config/stripe:/root/.config/stripe  # Сохраняем авторизацию CLI
+    networks:
+      - app-network
   redis:
     image: redis:latest
     container_name: redis
