@@ -7,6 +7,8 @@ __all__ = ('User',
            'StadiumReview',
            'AdditionalFacility',
            'Message',
+           'Wallet',
+           'Transaction'
 
            )
 
@@ -18,3 +20,4 @@ from backend.app.models.users import User
 from backend.app.models.stadiums import Stadium, PriceInterval
 from backend.app.models.bookings import Booking
 from backend.app.models.chat import Message
+from backend.app.models.wallet import Wallet, Transaction

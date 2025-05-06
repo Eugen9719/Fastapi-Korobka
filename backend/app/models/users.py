@@ -36,6 +36,7 @@ class User(UserBase, table=True):
 
     bookings: List["Booking"] = Relationship(back_populates="user")
     stadiums: List["Stadium"] = Relationship(back_populates="owner")
+    wallets: List["Wallet"] = Relationship(back_populates="user")
 
 
 
