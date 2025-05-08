@@ -8,7 +8,7 @@ class Verification(SQLModel, table=True):
     """ Модель для подтверждения регистрации пользователя"""
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     link: str = Field(default_factory=lambda: str(uuid4()), index=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="services.id")
 
 
 class Token(BaseModel):

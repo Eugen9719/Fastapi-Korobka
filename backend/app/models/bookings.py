@@ -22,19 +22,20 @@ class BookingBase(SQLModel):
 
 class Booking(BookingBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
-    user_id: Optional[int] = Field(foreign_key="user.id")
-    stadium_id: int = Field(foreign_key="stadium.id")
+    user_id: Optional[int] = Field(foreign_key="services.id")
+    stadium_id: int = Field(foreign_key="services.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = Field(default=StatusBooking.PENDING, max_length=50)
     stripe_payment_intent_id: Optional[str]
     price_booking: float
     total_price: float = Field(nullable=True)
+    owner_stadium:int
     user: Optional["User"] = Relationship(back_populates="bookings")
     stadium: Optional["Stadium"] = Relationship(back_populates="bookings")
 
     # Добавлено cascade="all, delete-orphan"
     booking_facility: List["BookingFacility"] = Relationship(
-        back_populates="booking",
+        back_populates="services",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
 
@@ -51,13 +52,13 @@ class Booking(BookingBase, table=True):
 class BookingFacility(SQLModel, table=True):
     __tablename__ = 'booking_facility'
     id: Optional[int] = Field(default=None, primary_key=True)
-    booking_id: int = Field(foreign_key="booking.id")
+    booking_id: int = Field(foreign_key="services.id")
     facility_id: int = Field(foreign_key="additional_facility.id")
     quantity: int = Field(default=1)
     total_price: float
 
     booking: Optional["Booking"] = Relationship(back_populates="booking_facility")
-    facility: Optional["AdditionalFacility"] = Relationship(back_populates="booking")
+    facility: Optional["AdditionalFacility"] = Relationship(back_populates="services")
 
 
 class BookingFacilityCreate(SQLModel):
@@ -79,7 +80,7 @@ class BookingCreate(SQLModel):
                 "end_time": "2025-03-26T12:41:01.167",
                 "stadium_id": 1,
                 "status_note": "Бронирование для тренировки",
-                "facility": [
+                "services": [
                     {
                         "facility_id": 1,
                         "quantity": 2

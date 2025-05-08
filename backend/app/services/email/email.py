@@ -18,7 +18,7 @@ def send_email(email_to: str, subject_template="", html_template="", environment
     if settings.SMTP_TLS:
         smtp_options['tls'] = True
     if settings.SMTP_USER:
-        smtp_options["user"] = settings.SMTP_USER
+        smtp_options["services"] = settings.SMTP_USER
     if settings.SMTP_PASSWORD:
         smtp_options["password"] = settings.SMTP_PASSWORD
 

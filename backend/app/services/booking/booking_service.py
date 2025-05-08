@@ -106,7 +106,7 @@ class BookingService:
                         detail=f"Service with ID {facility_data.facility_id} not found"
                     )
                 facilities_data.append({
-                    'facility': facility,
+                    'services': facility,
                     'quantity': facility_data.quantity,
                     'total': facility.price * facility_data.quantity
                 })
@@ -124,7 +124,8 @@ class BookingService:
             'status': StatusBooking.MANUAL if stadium.user_id == user.id else StatusBooking.PENDING,
             'price_booking': booking_price,
             'total_price': total_price,
-            'status_note': schema.status_note
+            'status_note': schema.status_note,
+            'owner_stadium':stadium.user_id
         }
 
         # 6. Создаем бронирование через репозиторий (включая коммит)

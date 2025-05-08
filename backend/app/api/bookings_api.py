@@ -92,7 +92,7 @@ async def get_booking(db: SessionDep, booking_id: int):
     return await service_factory.booking_service.get_booking(db=db, booking_id=booking_id)
 
 
-@booking_router.get('/{stadium_id}/stadium', response_model=List[BookingReadGet])
+@booking_router.get('/{stadium_id}/services', response_model=List[BookingReadGet])
 @sentry_capture_exceptions
 async def booking_for_stadium(db: SessionDep, stadium_id: int, user: CurrentUser):
     """

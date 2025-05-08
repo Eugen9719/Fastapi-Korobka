@@ -6,8 +6,10 @@ from backend.app.interface.repositories.i_booking_repo import IBookingRepository
 from backend.app.interface.repositories.i_facility_repo import IFacilityRepository
 from backend.app.interface.repositories.i_review_repo import IReviewRepository
 from backend.app.interface.repositories.i_stadium_repo import IStadiumRepository
+from backend.app.interface.repositories.i_transaction_repo import ITransactionRepository
 from backend.app.interface.repositories.i_user_repo import IUserRepository
 from backend.app.interface.repositories.i_verification_repo import IVerifyRepository
+from backend.app.interface.repositories.i_wallet_repo import IWalletRepository
 from backend.app.interface.utils.i_password_service import IPasswordService
 from backend.app.models import Stadium, User
 from backend.app.repositories.bookings_repositories import BookingRepository
@@ -15,8 +17,10 @@ from backend.app.repositories.chat_repositories import MessageRepositories
 from backend.app.repositories.facility_repository import FacilityRepository
 from backend.app.repositories.review_repository import ReviewRepository
 from backend.app.repositories.stadiums_repositories import StadiumRepository
+from backend.app.repositories.transaction_repositories import TransactionRepository
 from backend.app.repositories.user_repositories import UserRepository
 from backend.app.repositories.verification_repository import VerifyRepository
+from backend.app.repositories.wallet_repository import WalletRepository
 from backend.app.services.auth.authentication import UserAuthentication
 from backend.app.services.auth.google_auth_service import GoogleAuthService
 from backend.app.services.utils_service.password_service import PasswordService
@@ -34,6 +38,8 @@ from backend.app.services.stadium.stadium_image_service import StadiumImageServi
 from backend.app.services.stadium.stadium_intervals_service import StadiumIntervalsService
 from backend.app.services.stadium.stadium_service import StadiumService
 from backend.app.services.stadium.stadium_verif_service import StadiumVerifService
+from backend.app.services.wallet.transactions_service import TransactionService
+from backend.app.services.wallet.wallet_service import WalletService
 
 
 class ServiceFactory:
@@ -46,6 +52,8 @@ class ServiceFactory:
         self._stadium_repo = StadiumRepository()
         self._booking_repo = BookingRepository()
         self._message_repo = MessageRepositories()
+        self._wallet_repo = WalletRepository()
+        self._transaction_repo = TransactionRepository()
 
         # Базовые сервисы
         self._password_service = PasswordService()
@@ -59,6 +67,8 @@ class ServiceFactory:
         self._review_service = None
         self._facility_service = None
         self._booking_service = None
+        self._wallet_service = None
+        self._transaction_service=None
 
         self._user_auth = None
         self._google_auth_service = None
@@ -125,6 +135,14 @@ class ServiceFactory:
     @property
     def message_repo(self) -> MessageRepositories:
         return self._message_repo
+
+    @property
+    def wallet_repo(self) -> IWalletRepository:
+        return self._wallet_repo
+
+    @property
+    def transaction_repo(self) -> ITransactionRepository:
+        return self._transaction_repo
 
 
 
@@ -219,7 +237,8 @@ class ServiceFactory:
     def google_service(self) -> GoogleAuthService:
         if self._google_auth_service is None:
             self._google_auth_service =GoogleAuthService(
-                user_repository=self._user_repo
+                user_repository=self._user_repo,
+                wallet_repository=self._wallet_repo,
             )
         return self._google_auth_service
 
@@ -239,8 +258,10 @@ class ServiceFactory:
             self._registration_service = RegistrationService(
                 user_repository=self._user_repo,
                 verif_repository=self._verify_repo,
+                wallet_repository=self._wallet_repo,
                 email_service=self._email_service,
                 pass_service=self._password_service
+
             )
         return self._registration_service
 
@@ -256,6 +277,23 @@ class ServiceFactory:
             )
         return self._user_service
 
+    @property
+    def wallet_service(self) -> WalletService:
+        if self._wallet_service is None:
+            self._wallet_service = WalletService(
+                wallet_repository=self._wallet_repo,
+                permission=self._permission_service,
+
+            )
+        return self._wallet_service
+
+    @property
+    def transaction_service(self) -> TransactionService:
+        if self._transaction_service is None:
+            self._transaction_service = TransactionService(
+                transaction_repository=self._transaction_repo,
+            )
+        return self._transaction_service
 
 
 

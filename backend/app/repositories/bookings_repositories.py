@@ -42,7 +42,7 @@ class BookingRepository(IBookingRepository, AsyncBaseRepository[Booking, Booking
                 for item in facilities_data:
                     db.add(BookingFacility(
                         booking_id=booking.id,
-                        facility_id=item['facility'].id,
+                        facility_id=item['services'].id,
                         quantity=item['quantity'],
                         total_price=item['total']
                     ))

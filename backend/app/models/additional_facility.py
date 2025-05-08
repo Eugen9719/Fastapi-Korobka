@@ -11,8 +11,8 @@ class AdditionalFacility(SQLModel, table=True):
     description: Optional[str] = Field(default=None)
     price: Optional[float] = Field(default=0.0, nullable=True)
 
-    stadium: Optional[List["StadiumFacility"]] = Relationship(back_populates="facility")
-    booking: List["BookingFacility"] = Relationship(back_populates="facility")
+    stadium: Optional[List["StadiumFacility"]] = Relationship(back_populates="services")
+    booking: List["BookingFacility"] = Relationship(back_populates="services")
 
 
 class FacilityCreate(SQLModel):

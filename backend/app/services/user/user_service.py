@@ -29,7 +29,7 @@ class UserService:
         """Обновление данных пользователя с проверкой уникальности email."""
         existing_user = await self.user_repository.get_by_email(db, email=schema.email)
         if existing_user and existing_user.id != model.id:
-            raise HTTPException(status_code=400, detail="Email is already in use by another user.")
+            raise HTTPException(status_code=400, detail="Email is already in use by another services.")
         return await self.user_repository.update(db=db, model=model, schema=schema)
 
     @HttpExceptionWrapper

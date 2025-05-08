@@ -5,8 +5,11 @@ from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from backend.app.interface.repositories.i_user_repo import IUserRepository
+from backend.app.interface.repositories.i_wallet_repo import IWalletRepository
 from backend.app.models.auth import Token
 from backend.app.models.users import UserOauthCreate
+from backend.app.models.wallet import WalletCreate
+
 from backend.app.services.decorators import HttpExceptionWrapper
 from backend.core import security
 from backend.core.oauth_config import oauth
@@ -16,8 +19,9 @@ logger = logging.getLogger(__name__)
 class GoogleAuthService:
     """Сервис аутентификации через Google"""
 
-    def __init__(self, user_repository: IUserRepository):
+    def __init__(self, user_repository: IUserRepository, wallet_repository: IWalletRepository):
         self.user_repository = user_repository
+        self.wallet_repository = wallet_repository
 
 
 
@@ -77,4 +81,5 @@ class GoogleAuthService:
 
             )
             user = await self.user_repository.create(db=db, schema=schema)
+            await self.wallet_repository.create(db, schema=WalletCreate(user_id=user.id))
         return user

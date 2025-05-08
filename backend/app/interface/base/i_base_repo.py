@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, Optional, Tuple, Any, Sequence
 
+from pydantic import BaseModel
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-ModelType = TypeVar("ModelType", bound=SQLModel)
-CreateType = TypeVar("CreateType", bound=SQLModel)
-UpdateType = TypeVar("UpdateType", bound=SQLModel)
+ModelType = TypeVar("ModelType", bound=BaseModel)
+CreateType = TypeVar("CreateType", bound=BaseModel)
+UpdateType = TypeVar("UpdateType", bound=BaseModel)
 
 
 

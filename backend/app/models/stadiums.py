@@ -13,7 +13,7 @@ class PriceInterval(SQLModel, table=True):
     __tablename__ = 'price_interval'
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    stadium_id: int = Field(foreign_key="stadium.id")
+    stadium_id: int = Field(foreign_key="services.id")
     start_time: time = Field(sa_column=Column(Time), description="Начало интервала")
     end_time: time = Field(sa_column=Column(Time), description="Конец интервала")
     price: Decimal = Field(..., gt=0, description="Цена для интервала",
@@ -43,24 +43,24 @@ class StadiumsBase(SQLModel):
 
 
 class Stadium(StadiumsBase, table=True):
-    __tablename__ = 'stadium'
+    __tablename__ = 'services'
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     image_url: Optional[str]
     created_at: datetime = Field(default_factory=datetime.now, description="Дата создания")
     updated_at: datetime = Field(default_factory=datetime.now, description="Дата последнего обновления")
     is_active: bool = Field(default=False, description="Флаг активности продукта")
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="services.id")
     status: StadiumStatus = Field(default=StadiumStatus.DRAFT, nullable=True)
     reason: Optional[str] = Field(default=None, nullable=True)
 
     # Связи с другими моделями
-    images_all: List["Image"] = Relationship(back_populates="stadium")
-    bookings: List["Booking"] = Relationship(back_populates="stadium", cascade_delete=True)
+    images_all: List["Image"] = Relationship(back_populates="services")
+    bookings: List["Booking"] = Relationship(back_populates="services", cascade_delete=True)
     owner: "User" = Relationship(back_populates="stadiums")
-    stadium_reviews: List["StadiumReview"] = Relationship(back_populates="stadium", cascade_delete=True)
-    stadium_facility: List["StadiumFacility"] = Relationship(back_populates="stadium")
+    stadium_reviews: List["StadiumReview"] = Relationship(back_populates="services", cascade_delete=True)
+    stadium_facility: List["StadiumFacility"] = Relationship(back_populates="services")
 
-    price_intervals: List["PriceInterval"] = Relationship(back_populates="stadium", cascade_delete=True)
+    price_intervals: List["PriceInterval"] = Relationship(back_populates="services", cascade_delete=True)
     default_price: Optional[Decimal] = Field(None, gt=0, description="Базовая цена (дефолтная)",
                                              sa_column=Column(Numeric(precision=10, scale=2)))
 
@@ -76,10 +76,10 @@ class Stadium(StadiumsBase, table=True):
 class StadiumFacility(SQLModel, table=True):
     __tablename__ = 'stadium_facility'
     id: Optional[int] = Field(default=None, primary_key=True)
-    stadium_id: int = Field(foreign_key="stadium.id")
+    stadium_id: int = Field(foreign_key="services.id")
     facility_id: int = Field(foreign_key="additional_facility.id")
     stadium: Optional["Stadium"] = Relationship(back_populates="stadium_facility")
-    facility: Optional["AdditionalFacility"] = Relationship(back_populates="stadium")
+    facility: Optional["AdditionalFacility"] = Relationship(back_populates="services")
 
 
 class StadiumFacilityCreate(SQLModel):

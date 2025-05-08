@@ -4,8 +4,8 @@ from sqlmodel import SQLModel, Field
 
 class Message(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True, index=True)
-    sender_id: int = Field(foreign_key="user.id")
-    recipient_id: int = Field(foreign_key="user.id")
+    sender_id: int = Field(foreign_key="services.id")
+    recipient_id: int = Field(foreign_key="services.id")
     content: Optional[str] = Field(default=None, nullable=True)
 
 

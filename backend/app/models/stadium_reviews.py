@@ -8,8 +8,8 @@ from backend.app.models.base_model_public import ReviewReadBase
 
 class StadiumReview(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", )
-    stadium_id: int = Field(foreign_key="stadium.id", description="ID связанного поля")
+    user_id: int = Field(foreign_key="services.id", )
+    stadium_id: int = Field(foreign_key="services.id", description="ID связанного поля")
     review: str = Field(...)
     data: datetime = Field(default_factory=datetime.now, description="Дата создания  отзыва")
 

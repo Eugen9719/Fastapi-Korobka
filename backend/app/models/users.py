@@ -34,9 +34,9 @@ class User(UserBase, table=True):
     status: StatusEnum = Field(default=StatusEnum.PLAYER)
     reviews: List["StadiumReview"] = Relationship(back_populates="user_review")
 
-    bookings: List["Booking"] = Relationship(back_populates="user")
+    bookings: List["Booking"] = Relationship(back_populates="services")
     stadiums: List["Stadium"] = Relationship(back_populates="owner")
-    wallets: List["Wallet"] = Relationship(back_populates="user")
+    wallet: "Wallet" = Relationship(back_populates="services")
 
 
 

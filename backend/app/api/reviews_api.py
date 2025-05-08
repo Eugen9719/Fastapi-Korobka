@@ -9,7 +9,7 @@ from backend.core.db import TransactionSessionDep
 add_review_router = APIRouter()
 
 
-@add_review_router.post('/add-review/{stadium_id}', response_model=ReviewRead)
+@add_review_router.post('/add-services/{stadium_id}', response_model=ReviewRead)
 @sentry_capture_exceptions
 async def add_review(db: TransactionSessionDep, user: CurrentUser, schema: CreateReview, stadium_id: int):
     """
